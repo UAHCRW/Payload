@@ -3,8 +3,8 @@
     {
       "name": "VisualTeensy",
       "includePath": [
-        "include",
         "src",
+        "src/include",
         "cores/teensy4",
         "lib/SdFat/src",
         "lib/SPI"
