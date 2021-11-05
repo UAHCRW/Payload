@@ -18,6 +18,8 @@ PointerAlignment: Left
 AlignTrailingComments: true
 AlignConsecutiveAssignments: true
 
+AlignConsecutiveMacros: Consecutive 
+
 NamespaceIndentation: All
 FixNamespaceComments: false
 
