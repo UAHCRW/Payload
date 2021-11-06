@@ -15,6 +15,8 @@ Date: Fall 2021
 #include "include/ADXL356_Accelerometer.hpp"
 
 //------------------------------------------------------------------------------
+// SD Card Initialization
+//------------------------------------------------------------------------------
 // Store error strings in flash to save RAM.
 #define error(s) sd.errorHalt(&Serial, F(s))
 
@@ -41,18 +43,85 @@ const uint8_t SD_CS_PIN = SDCARD_SS_PIN;
 #    define SD_CONFIG SdSpiConfig(SD_CS_PIN, SHARED_SPI, SPI_CLOCK)
 #endif // HAS_SDIO_CLASS
 
-#define testFileName "testFile.csv"
+//------------------------------------------------------------------------------
+// Program Configuration
+//------------------------------------------------------------------------------
+#define TEST_FILE_NAME    "testFile.csv"
+#define LOGGING_FILE_NAME "logging.txt"
+#define PIN_D7            12
 
 // Sd card class
 SdFs sd;
 FsFile testFile;
+FsFile loggingFile;
 
+//------------------------------------------------------------------------------
+// Setup Functions
+//------------------------------------------------------------------------------
+enum LogLevel
+{
+    UNKNOWN,
+    ERROR,
+    WARN,
+    INFO,
+    DEBUG1,
+    DEBUG2
+};
+
+void logger(String msg, LogLevel level)
+{
+    String hdr{""};
+    if (level == LogLevel::ERROR)
+        hdr = "Error: ";
+    else if (level == LogLevel::WARN)
+        hdr = "Warn: ";
+    else if (level == LogLevel::INFO)
+        hdr = "Info: ";
+    else if (level == LogLevel::DEBUG1)
+        hdr = "Debug1: ";
+    else if (level == LogLevel::DEBUG2)
+        hdr = "Debug2: ";
+    else
+        hdr = "Unknown: ";
+
+    msg = hdr + msg;
+
+    if (loggingFile.isOpen())
+    {
+        loggingFile.print(String(msg));
+        // Serial.println("logged message [" + String(msg) + "]");
+    }
+    // else
+    //     Serial.println("Logging file not open, cannot log");
+
+    Serial.println(msg);
+}
+
+void logger(String msg)
+{
+    logger(msg, LogLevel::UNKNOWN);
+}
+
+void openFile(FsFile& file, const char* filename)
+{
+    if (!file.open(filename, O_CREAT | O_WRITE))
+        logger("Failed to open file [" + String(filename) + "]", LogLevel::ERROR);
+    else
+        logger("File [" + String(filename) + "] succesfully opened", LogLevel::INFO);
+}
+
+//------------------------------------------------------------------------------
+// Setup Functions
+//------------------------------------------------------------------------------
 void setup()
 {
+    Serial.println("\n\n\n");
+
     pinMode(LED_BUILTIN, OUTPUT);
+    pinMode(PIN_D7, INPUT_PULLUP); // Pushbutton
     Serial.begin(9600);
 
-    Serial.println("Mounting SD Card");
+    logger("Mounting SD Card", LogLevel::INFO);
 
     // Initialize the SD.
     if (!sd.begin(SD_CONFIG))
@@ -61,18 +130,10 @@ void setup()
         return;
     }
 
-    Serial.println("SD Card Succesfully mounted");
+    logger("SD Card Succesfully mounted", LogLevel::INFO);
 
-    Serial.print("Attempting to open test file ");
-    Serial.println(testFileName);
-
-    // Create the file.
-    if (!testFile.open(testFileName, FILE_WRITE))
-    {
-        error("open failed");
-    }
-
-    Serial.println("Test file open, writing some data.......");
+    openFile(testFile, TEST_FILE_NAME);
+    openFile(loggingFile, LOGGING_FILE_NAME);
 
     // Write test data.
     testFile.print(F(
@@ -81,12 +142,25 @@ void setup()
         "ghi,333,0xff,5.55"));
 
     testFile.close();
+    loggingFile.close();
 
-    Serial.println("Example data written and file closed.");
+    logger("Example data written and file closed.", LogLevel::INFO);
 }
 
+//------------------------------------------------------------------------------
+// Main Loop
+//------------------------------------------------------------------------------
 void loop()
 {
-    digitalWriteFast(LED_BUILTIN, !digitalReadFast(LED_BUILTIN));
-    delay(500);
+    // digitalWriteFast(LED_BUILTIN, !digitalReadFast(LED_BUILTIN));
+    // delay(500);
+
+    if (digitalRead(PIN_D7))
+    {
+        Serial.println("Push button not pressed");
+    }
+    else
+    {
+        Serial.println("Push button pressed!!!!!!!!!!!!!!!!!!!");
+    }
 }
