@@ -6,7 +6,8 @@
         "src",
         "cores/teensy4",
         "lib/SdFat/src",
-        "lib/SPI"
+        "lib/SPI",
+        "lib/Wire"
       ],
       "forcedInclude": [],
       "defines": [

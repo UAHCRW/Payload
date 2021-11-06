@@ -16,7 +16,8 @@
       "sharedLibraries": [],
       "projectLibraries": [
         "SdFat",
-        "SPI"
+        "SPI",
+        "Wire"
       ],
       "board": {
         "name": "Teensy 4.1",
