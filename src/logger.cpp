@@ -33,21 +33,11 @@ const char LEVEL_ERROR[] MEM_TYPE   = "ERROR";
 const char LEVEL_FATAL[] MEM_TYPE   = "FATAL";
 const char LEVEL_SILENT[] MEM_TYPE  = "SILENT";
 
-const char* const LOG_LEVEL_STRINGS[] MEM_TYPE =
-    {
-        LEVEL_VERBOSE,
-        LEVEL_NOTICE,
-        LEVEL_WARNING,
-        LEVEL_ERROR,
-        LEVEL_FATAL,
-        LEVEL_SILENT};
+const char* const LOG_LEVEL_STRINGS[] MEM_TYPE = {LEVEL_VERBOSE, LEVEL_NOTICE, LEVEL_WARNING,
+                                                  LEVEL_ERROR,   LEVEL_FATAL,  LEVEL_SILENT};
 #endif
 
-Logger::Logger()
-    : _level(WARNING),
-      _loggerOutputFunction(0)
-{
-}
+Logger::Logger() : _level(WARNING), _loggerOutputFunction(0) {}
 
 void Logger::setLogLevel(Level level)
 {

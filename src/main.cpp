@@ -14,6 +14,7 @@ Date: Fall 2021
 #include "include/ADXL356_Accelerometer.hpp"
 #include "include/Logger.hpp"
 #include "include/MPU6050.h"
+#include "include/settings.hpp"
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -49,14 +50,14 @@ const uint8_t SD_CS_PIN = SDCARD_SS_PIN;
 // Program Configuration (Pins, Sensors, Constants)
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-#define TEST_FILE_NAME    "testFile.csv"
-#define LOGGING_FILE_NAME "logging.txt"
-#define PIN_D7            12
+#define PIN_D7 12
 
-// Sd card class
+MPU6050 mpu_;
+Settings settings_;
+
 SdFs sd;
-FsFile testFile;
-FsFile loggingFile;
+FsFile trajectoryFile_;
+FsFile loggingFile_;
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -66,36 +67,44 @@ FsFile loggingFile;
 
 void openFile(FsFile& file, const char* filename)
 {
+    int fileAppend = 0; // Add a value to begining of file if one already exists
+    String newFilename(filename);
+    while (sd.exists(newFilename.c_str()))
+    {
+        fileAppend++;
+        String append(String(fileAppend) + "_" + String(filename));
+        newFilename = append;
+    }
 
-    if (!file.open(filename, O_CREAT | O_WRITE))
+    if (!file.open(newFilename.c_str(), O_CREAT | O_WRITE))
     {
         String msg("File failed to open [" + String(filename) + "]");
-        char buf[msg.length()];
-        msg.toCharArray(buf, msg.length());
-        Logger::error(buf);
+        Logger::error(msg.c_str());
     }
     else
     {
         String msg("File [" + String(filename) + "] succesfully opened");
-        char buf[msg.length()];
-        msg.toCharArray(buf, msg.length());
-        Logger::notice(buf);
+        Logger::notice(msg.c_str());
     }
 }
 
 void crwLogger(Logger::Level level, const char* module, const char* message)
 {
-    if (loggingFile.isOpen())
-    {
-        loggingFile.print(Logger::asString(level));
-        loggingFile.print(module);
-        loggingFile.println(message);
-        loggingFile.flush();
-    }
+    // if (loggingFile_.isOpen())
+    // {
+    //     loggingFile_.print(Logger::asString(level));
+    //     loggingFile_.print(module);
+    //     loggingFile_.println(message);
+    //     loggingFile_.flush();
+    // }
 
     Serial.print(Logger::asString(level));
     Serial.print(module);
     Serial.println(message);
+}
+void func()
+{
+    Serial.println("test");
 }
 
 //------------------------------------------------------------------------------
@@ -106,10 +115,10 @@ void crwLogger(Logger::Level level, const char* module, const char* message)
 void setup()
 {
     Logger::setOutputFunction(crwLogger);
-    Serial.println("\n\n\n");
+    Logger::setLogLevel(settings_.getLoggingLevel());
 
     pinMode(LED_BUILTIN, OUTPUT);
-    Serial.begin(9600);
+    Serial.begin(settings_.getBaudRate());
 
     Logger::notice("Mounting SD Card");
 
@@ -122,18 +131,21 @@ void setup()
 
     Logger::notice("SD Card Succesfully mounted");
 
-    openFile(testFile, TEST_FILE_NAME);
-    openFile(loggingFile, LOGGING_FILE_NAME);
+    openFile(trajectoryFile_, settings_.getTrajectoryFilename());
+    openFile(loggingFile_, settings_.getLoggingFilename());
+
+    Logger::notice("---------------------------------------------------------------------");
+    Logger::notice("          Dead Reckoning Navigation System (DRNS) Startup");
+    Logger::notice("---------------------------------------------------------------------");
+
+    settings_.initializeIMU(&mpu_);
 
     // Write test data.
-    testFile.print(F(
-        "abc,123,456,7.89\r\n"
-        "def,-321,654,-9.87\r\n"
-        "ghi,333,0xff,5.55"));
-    testFile.flush();
-
-    testFile.close();
-    loggingFile.close();
+    // testFile.print(F(
+    //     "abc,123,456,7.89\r\n"
+    //     "def,-321,654,-9.87\r\n"
+    //     "ghi,333,0xff,5.55"));
+    // testFile.flush();
 
     Logger::notice("Example data written and file closed.");
 }
@@ -145,15 +157,6 @@ void setup()
 //------------------------------------------------------------------------------
 void loop()
 {
-    // digitalWriteFast(LED_BUILTIN, !digitalReadFast(LED_BUILTIN));
-    // delay(500);
-
-    if (digitalRead(PIN_D7))
-    {
-        Serial.println("Push button not pressed");
-    }
-    else
-    {
-        Serial.println("Push button pressed!!!!!!!!!!!!!!!!!!!");
-    }
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    delay(500);
 }

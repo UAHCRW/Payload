@@ -1,6 +1,11 @@
 {
   "task.autoDetect": "off",
   "files.associations": {
-    "system_error": "cpp"
+    "system_error": "cpp",
+    "array": "cpp",
+    "string": "cpp",
+    "unordered_map": "cpp",
+    "vector": "cpp",
+    "initializer_list": "cpp"
   }
 }

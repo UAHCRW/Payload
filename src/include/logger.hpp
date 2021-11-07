@@ -22,7 +22,8 @@
 //
 // =============================================================================
 
-#pragma once
+#ifndef LOGGER_HPP
+#define LOGGER_HPP
 
 #ifdef TEENSY_BUILD
 #    include "Arduino.h"
@@ -41,9 +42,7 @@ class Logger
         SILENT
     };
 
-    typedef void (*LoggerOutputFunction)(Level level,
-                                         const char* module,
-                                         const char* message);
+    typedef void (*LoggerOutputFunction)(Level level, const char* module, const char* message);
 
     static void setLogLevel(Level level);
 
@@ -80,3 +79,5 @@ class Logger
 
     LoggerOutputFunction _loggerOutputFunction;
 };
+
+#endif

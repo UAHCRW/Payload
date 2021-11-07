@@ -1,5 +1,6 @@
 /*
-MPU6050.cpp - Class file for the MPU6050 Triple Axis Gyroscope & Accelerometer Arduino Library.
+MPU6050.cpp - Class file for the MPU6050 Triple Axis Gyroscope & Accelerometer Arduino
+Library.
 
 Version: 1.0.3
 (c) 2014-2015 Korneliusz Jarzebski
@@ -25,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 #include "include/MPU6050.h"
+// #include "MPU6050.h"
 #include <Wire.h>
 #include <math.h>
 
@@ -48,10 +50,7 @@ bool MPU6050::begin(mpu6050_dps_t scale, mpu6050_range_t range, int mpua)
     actualThreshold = 0;
 
     // Check MPU6050 Who Am I Register
-    if (fastRegister8(MPU6050_REG_WHO_AM_I) != 0x68)
-    {
-        return false;
-    }
+    if (fastRegister8(MPU6050_REG_WHO_AM_I) != 0x68) { return false; }
 
     // Set Clock Source
     setClockSource(MPU6050_CLOCK_PLL_XGYRO);
@@ -575,10 +574,7 @@ void MPU6050::calibrateGyro(uint8_t samples)
     th.ZAxis = sqrt((sigmaZ / 50) - (dg.ZAxis * dg.ZAxis));
 
     // If already set threshold, recalculate threshold vectors
-    if (actualThreshold > 0)
-    {
-        setThreshold(actualThreshold);
-    }
+    if (actualThreshold > 0) { setThreshold(actualThreshold); }
 }
 
 // Get current threshold value
@@ -593,10 +589,7 @@ void MPU6050::setThreshold(uint8_t multiple)
     if (multiple > 0)
     {
         // If not calibrated, need calibrate
-        if (!useCalibrate)
-        {
-            calibrateGyro();
-        }
+        if (!useCalibrate) { calibrateGyro(); }
 
         // Calculate threshold vectors
         tg.XAxis = th.XAxis * multiple;
@@ -634,7 +627,7 @@ uint8_t MPU6050::fastRegister8(uint8_t reg)
     value = Wire.read();
 #else
     value = Wire.receive();
-#endif;
+#endif
     Wire.endTransmission();
 
     return value;
@@ -660,7 +653,7 @@ uint8_t MPU6050::readRegister8(uint8_t reg)
     value = Wire.read();
 #else
     value = Wire.receive();
-#endif;
+#endif
     Wire.endTransmission();
 
     return value;
@@ -701,7 +694,7 @@ int16_t MPU6050::readRegister16(uint8_t reg)
 #else
     uint8_t vha = Wire.receive();
     uint8_t vla = Wire.receive();
-#endif;
+#endif
     Wire.endTransmission();
 
     value = vha << 8 | vla;
@@ -739,10 +732,7 @@ void MPU6050::writeRegisterBit(uint8_t reg, uint8_t pos, bool state)
     uint8_t value;
     value = readRegister8(reg);
 
-    if (state)
-    {
-        value |= (1 << pos);
-    }
+    if (state) { value |= (1 << pos); }
     else
     {
         value &= ~(1 << pos);
