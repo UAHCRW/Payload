@@ -1,10 +1,9 @@
 #ifndef SETTINGS_HPP
 #define SETTINGS_HPP
 
+#include "Arduino.h"
 #include "MPU6050.h"
 #include "logger.hpp"
-// #include "include/MPU6050.h"
-// #include "include/logger.hpp"
 #include <stdint.h>
 
 class Settings final
@@ -19,8 +18,8 @@ class Settings final
     bool initializeMagnetometer() { return false; }
     bool initializePressureSensor() { return false; }
 
-    char* getTrajectoryFilename() { return &trajectoryFileName_[0]; }
-    char* getLoggingFilename() { return &loggingFileName_[0]; }
+    String getTrajectoryFilename() { return trajectoryFileName_; }
+    String getLoggingFilename() { return loggingFileName_; }
     Logger::Level getLoggingLevel() { return loggingLevel_; }
     uint32_t getBaudRate() { return baudRate_; }
     mpu6050_range_t getMpuAccelRange() { return mpuAccelerometerRange_; }
@@ -28,9 +27,9 @@ class Settings final
     bool isMpu6050Initialized() { return mpu6050Initialized_; }
 
     private:
-    void convertIntToChar(const char* message, char* buf, uint64_t val);
-    char trajectoryFileName_[60];
-    char loggingFileName_[60];
+    // General
+    String trajectoryFileName_;
+    String loggingFileName_;
     Logger::Level loggingLevel_;
     uint32_t baudRate_;
 

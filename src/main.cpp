@@ -47,21 +47,147 @@ const uint8_t SD_CS_PIN = SDCARD_SS_PIN;
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-// Program Configuration (Pins, Sensors, Constants)
+// Program Configuration & Definitions (Pins, Sensors, Constants, Functions)
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 #define PIN_D7 12
 
 MPU6050 mpu_;
 Settings settings_;
+char newarray[5000];
 
 SdFs sd;
 FsFile trajectoryFile_;
 FsFile loggingFile_;
 
+Vector mpuRawAccel_;
+Vector mpuNormAccel_;
+Vector mpuRawGyro_;
+Vector mpuNormGyro_;
+float mpuTemp_;
+Activites mpu6050Activities_;
+
+// Functions
+void openFile(FsFile& file, const char* filename);
+void crwLogger(Logger::Level level, const char* module, const char* message);
+
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-// Setup Functions
+// Setup()
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void setup()
+{
+    Logger::setOutputFunction(crwLogger);
+    Logger::setLogLevel(settings_.getLoggingLevel());
+
+    pinMode(LED_BUILTIN, OUTPUT);
+    Serial.begin(settings_.getBaudRate());
+
+    Logger::notice("Mounting SD Card");
+
+    // Initialize the SD.
+    if (!sd.begin(SD_CONFIG))
+    {
+        sd.initErrorHalt(&Serial);
+        return;
+    }
+
+    Logger::notice("SD Card Succesfully mounted");
+
+    openFile(trajectoryFile_, settings_.getTrajectoryFilename().c_str());
+    openFile(loggingFile_, settings_.getLoggingFilename().c_str());
+
+    Logger::notice("---------------------------------------------------------------------");
+    Logger::notice("          Dead Reckoning Navigation System (DRNS) Startup");
+    Logger::notice("---------------------------------------------------------------------");
+    Logger::notice("");
+
+    settings_.initializeIMU(&mpu_);
+
+    // Write test data.
+    // testFile.print(F(
+    //     "abc,123,456,7.89\r\n"
+    //     "def,-321,654,-9.87\r\n"
+    //     "ghi,333,0xff,5.55"));
+    // testFile.flush();
+
+    Logger::notice("Example data written and file closed.");
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// Main Loop
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void loop()
+{
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+
+    // Get values from the mpu IMU
+    mpuRawAccel_       = mpu_.readRawAccel();
+    mpuNormAccel_      = mpu_.readNormalizeAccel();
+    mpuRawGyro_        = mpu_.readRawGyro();
+    mpuNormGyro_       = mpu_.readNormalizeGyro();
+    mpu6050Activities_ = mpu_.readActivites();
+    mpuTemp_           = mpu_.readTemperature();
+
+    // Write MPU 6050 Data to the csv file
+    trajectoryFile_.print(mpuRawAccel_.XAxis);
+    trajectoryFile_.print(F(","));
+    trajectoryFile_.print(mpuRawAccel_.YAxis);
+    trajectoryFile_.print(F(","));
+    trajectoryFile_.print(mpuRawAccel_.ZAxis);
+    trajectoryFile_.print(F(","));
+
+    trajectoryFile_.print(mpuNormAccel_.XAxis);
+    trajectoryFile_.print(F(","));
+    trajectoryFile_.print(mpuNormAccel_.YAxis);
+    trajectoryFile_.print(F(","));
+    trajectoryFile_.print(mpuNormAccel_.ZAxis);
+    trajectoryFile_.print(F(","));
+
+    trajectoryFile_.print(mpuRawGyro_.XAxis);
+    trajectoryFile_.print(F(","));
+    trajectoryFile_.print(mpuRawGyro_.YAxis);
+    trajectoryFile_.print(F(","));
+    trajectoryFile_.print(mpuRawGyro_.ZAxis);
+    trajectoryFile_.print(F(","));
+
+    trajectoryFile_.print(mpuNormGyro_.XAxis);
+    trajectoryFile_.print(F(","));
+    trajectoryFile_.print(mpuNormGyro_.YAxis);
+    trajectoryFile_.print(F(","));
+    trajectoryFile_.print(mpuNormGyro_.ZAxis);
+    trajectoryFile_.print(F(","));
+
+    trajectoryFile_.print(mpu6050Activities_.isActivity);
+    trajectoryFile_.print(F(","));
+    trajectoryFile_.print(mpu6050Activities_.isInactivity);
+    trajectoryFile_.print(F(","));
+    trajectoryFile_.print(mpu6050Activities_.isPosActivityOnX);
+    trajectoryFile_.print(F(","));
+    trajectoryFile_.print(mpu6050Activities_.isNegActivityOnX);
+    trajectoryFile_.print(F(","));
+    trajectoryFile_.print(mpu6050Activities_.isPosActivityOnY);
+    trajectoryFile_.print(F(","));
+    trajectoryFile_.print(mpu6050Activities_.isNegActivityOnY);
+    trajectoryFile_.print(F(","));
+
+    trajectoryFile_.print(mpu6050Activities_.isPosActivityOnZ);
+    trajectoryFile_.print(F(","));
+    trajectoryFile_.print(mpu6050Activities_.isNegActivityOnZ);
+    trajectoryFile_.print(F(","));
+    trajectoryFile_.print(mpu6050Activities_.isDataReady);
+    trajectoryFile_.print(F(","));
+    trajectoryFile_.print(mpu6050Activities_.isOverflow);
+    trajectoryFile_.print(F(","));
+    trajectoryFile_.println(mpu6050Activities_.isFreeFall);
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// Main Functions
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 
@@ -90,73 +216,15 @@ void openFile(FsFile& file, const char* filename)
 
 void crwLogger(Logger::Level level, const char* module, const char* message)
 {
-    // if (loggingFile_.isOpen())
-    // {
-    //     loggingFile_.print(Logger::asString(level));
-    //     loggingFile_.print(module);
-    //     loggingFile_.println(message);
-    //     loggingFile_.flush();
-    // }
+    if (loggingFile_.isOpen())
+    {
+        loggingFile_.print(Logger::asString(level));
+        loggingFile_.print(module);
+        loggingFile_.println(message);
+        loggingFile_.flush();
+    }
 
     Serial.print(Logger::asString(level));
     Serial.print(module);
     Serial.println(message);
-}
-void func()
-{
-    Serial.println("test");
-}
-
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-// Setup()
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-void setup()
-{
-    Logger::setOutputFunction(crwLogger);
-    Logger::setLogLevel(settings_.getLoggingLevel());
-
-    pinMode(LED_BUILTIN, OUTPUT);
-    Serial.begin(settings_.getBaudRate());
-
-    Logger::notice("Mounting SD Card");
-
-    // Initialize the SD.
-    if (!sd.begin(SD_CONFIG))
-    {
-        sd.initErrorHalt(&Serial);
-        return;
-    }
-
-    Logger::notice("SD Card Succesfully mounted");
-
-    openFile(trajectoryFile_, settings_.getTrajectoryFilename());
-    openFile(loggingFile_, settings_.getLoggingFilename());
-
-    Logger::notice("---------------------------------------------------------------------");
-    Logger::notice("          Dead Reckoning Navigation System (DRNS) Startup");
-    Logger::notice("---------------------------------------------------------------------");
-
-    settings_.initializeIMU(&mpu_);
-
-    // Write test data.
-    // testFile.print(F(
-    //     "abc,123,456,7.89\r\n"
-    //     "def,-321,654,-9.87\r\n"
-    //     "ghi,333,0xff,5.55"));
-    // testFile.flush();
-
-    Logger::notice("Example data written and file closed.");
-}
-
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-// Main Loop
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-void loop()
-{
-    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    delay(500);
 }
