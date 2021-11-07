@@ -1,6 +1,7 @@
 #ifndef ADXL356_ACCELEROMETER_HPP
 #define ADXL356_ACCELEROMETER_HPP
 
+#include "logger.hpp"
 #include <stdint.h>
 
 // General Register Values
