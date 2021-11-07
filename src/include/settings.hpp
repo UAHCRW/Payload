@@ -18,6 +18,7 @@ class Settings final
     bool initializeMagnetometer() { return false; }
     bool initializePressureSensor() { return false; }
 
+    void printCrwPayloadSettings();
     String getTrajectoryFilename() { return trajectoryFileName_; }
     String getLoggingFilename() { return loggingFileName_; }
     Logger::Level getLoggingLevel() { return loggingLevel_; }
@@ -32,6 +33,8 @@ class Settings final
     String loggingFileName_;
     Logger::Level loggingLevel_;
     uint32_t baudRate_;
+    float samplingFreq_;
+    float timeInterval_;
 
     // MPU 6050
     mpu6050_range_t mpuAccelerometerRange_;

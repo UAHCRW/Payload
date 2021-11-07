@@ -54,7 +54,10 @@ const uint8_t SD_CS_PIN = SDCARD_SS_PIN;
 
 MPU6050 mpu_;
 Settings settings_;
-char newarray[5000];
+float readTime_ = 0;
+float roll_     = 0;
+float pitch_    = 0;
+float yaw_      = 0;
 
 SdFs sd;
 FsFile trajectoryFile_;
@@ -102,6 +105,7 @@ void setup()
     Logger::notice("          Dead Reckoning Navigation System (DRNS) Startup");
     Logger::notice("---------------------------------------------------------------------");
     Logger::notice("");
+    settings_.printCrwPayloadSettings();
 
     settings_.initializeIMU(&mpu_);
 
@@ -122,6 +126,8 @@ void setup()
 //------------------------------------------------------------------------------
 void loop()
 {
+    readTime_ = millis();
+
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
 
     // Get values from the mpu IMU
@@ -132,7 +138,13 @@ void loop()
     mpu6050Activities_ = mpu_.readActivites();
     mpuTemp_           = mpu_.readTemperature();
 
+    roll_  = roll_ + mpuNormGyro_.XAxis * settings_.timeInterval_;
+    pitch_ = pitch_ + mpuNormGyro_.YAxis * settings_.timeInterval_;
+    yaw_   = yaw_ + mpuNormGyro_.ZAxis * settings_.timeInterval_;
+
     // Write MPU 6050 Data to the csv file
+    trajectoryFile_.print(readTime_);
+    trajectoryFile_.print(F("\n"));
     trajectoryFile_.print(mpuRawAccel_.XAxis);
     trajectoryFile_.print(F(","));
     trajectoryFile_.print(mpuRawAccel_.YAxis);
@@ -161,6 +173,13 @@ void loop()
     trajectoryFile_.print(mpuNormGyro_.ZAxis);
     trajectoryFile_.print(F(","));
 
+    trajectoryFile_.print(roll_);
+    trajectoryFile_.print(F(","));
+    trajectoryFile_.print(pitch_);
+    trajectoryFile_.print(F(","));
+    trajectoryFile_.print(yaw_);
+    trajectoryFile_.print(F(","));
+
     trajectoryFile_.print(mpu6050Activities_.isActivity);
     trajectoryFile_.print(F(","));
     trajectoryFile_.print(mpu6050Activities_.isInactivity);
@@ -182,7 +201,11 @@ void loop()
     trajectoryFile_.print(F(","));
     trajectoryFile_.print(mpu6050Activities_.isOverflow);
     trajectoryFile_.print(F(","));
-    trajectoryFile_.println(mpu6050Activities_.isFreeFall);
+    trajectoryFile_.print(mpu6050Activities_.isFreeFall);
+    trajectoryFile_.print(F(","));
+    trajectoryFile_.println(mpuTemp_);
+
+    delay((settings_.timeInterval_ * 1000) - (millis() - readTime_));
 }
 
 //------------------------------------------------------------------------------

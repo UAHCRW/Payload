@@ -4,9 +4,25 @@
 
 Settings::Settings()
     : trajectoryFileName_("trajectory.csv"), loggingFileName_("logging.txt"), loggingLevel_(Logger::Level::SILENT),
-      baudRate_(115200), mpuAccelerometerRange_(mpu6050_range_t::MPU6050_RANGE_16G),
+      baudRate_(115200), samplingFreq_(100.0), timeInterval_(0.0),
+      mpuAccelerometerRange_(mpu6050_range_t::MPU6050_RANGE_16G),
       mpuGyrometerRange_(mpu6050_dps_t::MPU6050_SCALE_2000DPS), mpu6050Initialized_(false)
 {
+    timeInterval_ = 1 / samplingFreq_;
+}
+
+void Settings::printCrwPayloadSettings()
+{
+    Logger::notice("---------------------------------------------------------------------");
+    Logger::notice("                 CRW 2021 - 2022 Payload Configuration");
+    Logger::notice("---------------------------------------------------------------------");
+    Logger::notice(("\tTrajectory Filename: " + trajectoryFileName_).c_str());
+    Logger::notice(("\tLogging Filename:    " + loggingFileName_).c_str());
+    Logger::notice(("\tLogging Level:       " + String(Logger::asString(loggingLevel_))).c_str());
+    Logger::notice(("\tBaud Rate:           " + String(baudRate_)).c_str());
+    Logger::notice(("\tSampling Freq [Hz]:  " + String(samplingFreq_)).c_str());
+    Logger::notice(("\tTime Interval:       " + String(timeInterval_)).c_str());
+    Logger::notice("");
 }
 
 bool Settings::initializeIMU(MPU6050* sensor)
@@ -17,6 +33,8 @@ bool Settings::initializeIMU(MPU6050* sensor)
         Logger::error("Could not find a valid MPU6050 sensor, check wiring!");
         return false;
     }
+    mpu6050Initialized_ = true;
+
     Logger::notice("---------------------------------------------------------------------");
     Logger::notice("                 MPU 6050 IMU Configuration");
     Logger::notice("---------------------------------------------------------------------");
@@ -93,5 +111,5 @@ bool Settings::initializeIMU(MPU6050* sensor)
     Logger::notice(("\t" + String(sensor->getGyroOffsetY())).c_str());
     Logger::notice(("\t" + String(sensor->getGyroOffsetZ()) + "\n").c_str());
 
-    return true;
+    return mpu6050Initialized_;
 }
