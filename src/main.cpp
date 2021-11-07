@@ -8,13 +8,13 @@ Sensors:
 Author: Charger Rocket Works 2021/2022 Team
 Date: Fall 2021
 */
+#include "ADXL356_Accelerometer.hpp"
 #include "Arduino.h"
+#include "Logger.hpp"
+#include "MPU6050.h"
 #include "SPI.h"
 #include "SdFat.h"
-#include "include/ADXL356_Accelerometer.hpp"
-#include "include/Logger.hpp"
-#include "include/MPU6050.h"
-#include "include/settings.hpp"
+#include "settings.hpp"
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -138,9 +138,9 @@ void loop()
     mpu6050Activities_ = mpu_.readActivites();
     mpuTemp_           = mpu_.readTemperature();
 
-    roll_  = roll_ + mpuNormGyro_.XAxis * settings_.timeInterval_;
-    pitch_ = pitch_ + mpuNormGyro_.YAxis * settings_.timeInterval_;
-    yaw_   = yaw_ + mpuNormGyro_.ZAxis * settings_.timeInterval_;
+    roll_  = roll_ + mpuNormGyro_.XAxis * settings_.getTimeInterval();
+    pitch_ = pitch_ + mpuNormGyro_.YAxis * settings_.getTimeInterval();
+    yaw_   = yaw_ + mpuNormGyro_.ZAxis * settings_.getTimeInterval();
 
     // Write MPU 6050 Data to the csv file
     trajectoryFile_.print(readTime_);
@@ -205,7 +205,7 @@ void loop()
     trajectoryFile_.print(F(","));
     trajectoryFile_.println(mpuTemp_);
 
-    delay((settings_.timeInterval_ * 1000) - (millis() - readTime_));
+    delay((settings_.getTimeInterval() * 1000) - (millis() - readTime_));
 }
 
 //------------------------------------------------------------------------------

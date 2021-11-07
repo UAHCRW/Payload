@@ -26,6 +26,7 @@ class Settings final
     mpu6050_range_t getMpuAccelRange() { return mpuAccelerometerRange_; }
     mpu6050_dps_t getMpuGyroRange() { return mpuGyrometerRange_; }
     bool isMpu6050Initialized() { return mpu6050Initialized_; }
+    float getTimeInterval() { return timeInterval_; }
 
     private:
     // General

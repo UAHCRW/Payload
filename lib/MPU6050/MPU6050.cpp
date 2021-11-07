@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #    include "WProgram.h"
 #endif
 
-#include "include/MPU6050.h"
+#include "MPU6050.h"
 // #include "MPU6050.h"
 #include <Wire.h>
 #include <math.h>
@@ -71,20 +71,11 @@ void MPU6050::setScale(mpu6050_dps_t scale)
 
     switch (scale)
     {
-        case MPU6050_SCALE_250DPS:
-            dpsPerDigit = .007633f;
-            break;
-        case MPU6050_SCALE_500DPS:
-            dpsPerDigit = .015267f;
-            break;
-        case MPU6050_SCALE_1000DPS:
-            dpsPerDigit = .030487f;
-            break;
-        case MPU6050_SCALE_2000DPS:
-            dpsPerDigit = .060975f;
-            break;
-        default:
-            break;
+        case MPU6050_SCALE_250DPS: dpsPerDigit = .007633f; break;
+        case MPU6050_SCALE_500DPS: dpsPerDigit = .015267f; break;
+        case MPU6050_SCALE_1000DPS: dpsPerDigit = .030487f; break;
+        case MPU6050_SCALE_2000DPS: dpsPerDigit = .060975f; break;
+        default: break;
     }
 
     value = readRegister8(MPU6050_REG_GYRO_CONFIG);
@@ -108,20 +99,11 @@ void MPU6050::setRange(mpu6050_range_t range)
 
     switch (range)
     {
-        case MPU6050_RANGE_2G:
-            rangePerDigit = .000061f;
-            break;
-        case MPU6050_RANGE_4G:
-            rangePerDigit = .000122f;
-            break;
-        case MPU6050_RANGE_8G:
-            rangePerDigit = .000244f;
-            break;
-        case MPU6050_RANGE_16G:
-            rangePerDigit = .0004882f;
-            break;
-        default:
-            break;
+        case MPU6050_RANGE_2G: rangePerDigit = .000061f; break;
+        case MPU6050_RANGE_4G: rangePerDigit = .000122f; break;
+        case MPU6050_RANGE_8G: rangePerDigit = .000244f; break;
+        case MPU6050_RANGE_16G: rangePerDigit = .0004882f; break;
+        default: break;
     }
 
     value = readRegister8(MPU6050_REG_ACCEL_CONFIG);

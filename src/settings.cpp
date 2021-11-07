@@ -1,4 +1,4 @@
-#include "include/settings.hpp"
+#include "settings.hpp"
 #include "stdio.h"
 #include "string.h"
 

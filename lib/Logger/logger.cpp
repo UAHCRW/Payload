@@ -22,7 +22,7 @@
 //
 // =============================================================================
 
-#include "include/logger.hpp"
+#include "logger.hpp"
 
 #ifdef TEENSY_BUILD // TODO: Make this build with the standard C++ library
 #    define MEM_TYPE PROGMEM
@@ -108,8 +108,7 @@ void Logger::log(Level level, const char* module, const char* message)
 {
     if (level >= getLogLevel())
     {
-        if (getInstance()._loggerOutputFunction)
-            getInstance()._loggerOutputFunction(level, module, message);
+        if (getInstance()._loggerOutputFunction) getInstance()._loggerOutputFunction(level, module, message);
     }
 }
 
