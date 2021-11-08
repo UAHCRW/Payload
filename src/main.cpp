@@ -52,10 +52,7 @@ const uint8_t SD_CS_PIN = SDCARD_SS_PIN;
 // Program Configuration & Definitions (Pins, Sensors, Constants, Functions)
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-#define CLOCK_PIN 13
-#define MISO_PIN  12
-#define MOSI_PIN  11
-#define CS_PIN    10
+#define RAW_MAGNETOMETER_CHIP_SELECT 12
 
 Adafruit_LIS3MDL magnetomer_;
 sensors_event_t magEvent_;
@@ -91,6 +88,16 @@ void openFile(FsFile& file, const char* filename);
 /// \param message The message to be logged
 void crwLogger(Logger::Level level, const char* module, const char* message);
 
+/// \brief Writes data to a csv file
+/// \param file Sd Card file object
+/// \param data data to write to the file
+void writeDataToCsv(FsFile& file, Vector& data, bool endLine = false);
+void writeDataToCsv(FsFile& file, int16_t& data, bool endLine = false);
+void writeDataToCsv(FsFile& file, float& data, bool endLine = false);
+void writeDataToCsv(FsFile& file, double& data, bool endLine = false);
+void writeDataToCsv(FsFile& file, Activites& data, bool endLine = false);
+void writeDataToCsv(FsFile& file, sensors_event_t& data, bool endLine = false);
+
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 // Setup()
@@ -125,16 +132,7 @@ void setup()
     settings_.printCrwPayloadSettings();
 
     settings_.initializeIMU(&mpu_);
-    settings_.initializeMagnetometer(&magnetomer_, CLOCK_PIN);
-
-    // Write test data.
-    // testFile.print(F(
-    //     "abc,123,456,7.89\r\n"
-    //     "def,-321,654,-9.87\r\n"
-    //     "ghi,333,0xff,5.55"));
-    // testFile.flush();
-
-    Logger::notice("Example data written and file closed.");
+    settings_.initializeMagnetometer(&magnetomer_, RAW_MAGNETOMETER_CHIP_SELECT);
 }
 
 //------------------------------------------------------------------------------
@@ -164,84 +162,25 @@ void loop()
     pitch_ = pitch_ + mpuNormGyro_.YAxis * settings_.getTimeInterval();
     yaw_   = yaw_ + mpuNormGyro_.ZAxis * settings_.getTimeInterval();
 
-    // Write MPU 6050 Data to the csv file
-    trajectoryFile_.print(readTime_);
-    trajectoryFile_.print(F("\n"));
-    trajectoryFile_.print(mpuRawAccel_.XAxis);
-    trajectoryFile_.print(F(","));
-    trajectoryFile_.print(mpuRawAccel_.YAxis);
-    trajectoryFile_.print(F(","));
-    trajectoryFile_.print(mpuRawAccel_.ZAxis);
-    trajectoryFile_.print(F(","));
+    writeDataToCsv(trajectoryFile_, readTime_);
+    writeDataToCsv(trajectoryFile_, mpuRawAccel_);
+    writeDataToCsv(trajectoryFile_, mpuNormAccel_);
+    writeDataToCsv(trajectoryFile_, mpuRawGyro_);
+    writeDataToCsv(trajectoryFile_, mpuNormGyro_);
 
-    trajectoryFile_.print(mpuNormAccel_.XAxis);
-    trajectoryFile_.print(F(","));
-    trajectoryFile_.print(mpuNormAccel_.YAxis);
-    trajectoryFile_.print(F(","));
-    trajectoryFile_.print(mpuNormAccel_.ZAxis);
-    trajectoryFile_.print(F(","));
+    writeDataToCsv(trajectoryFile_, roll_);
+    writeDataToCsv(trajectoryFile_, pitch_);
+    writeDataToCsv(trajectoryFile_, yaw_);
+    writeDataToCsv(trajectoryFile_, mpu6050Activities_);
 
-    trajectoryFile_.print(mpuRawGyro_.XAxis);
-    trajectoryFile_.print(F(","));
-    trajectoryFile_.print(mpuRawGyro_.YAxis);
-    trajectoryFile_.print(F(","));
-    trajectoryFile_.print(mpuRawGyro_.ZAxis);
-    trajectoryFile_.print(F(","));
+    writeDataToCsv(trajectoryFile_, mpuTemp_);
 
-    trajectoryFile_.print(mpuNormGyro_.XAxis);
-    trajectoryFile_.print(F(","));
-    trajectoryFile_.print(mpuNormGyro_.YAxis);
-    trajectoryFile_.print(F(","));
-    trajectoryFile_.print(mpuNormGyro_.ZAxis);
-    trajectoryFile_.print(F(","));
+    writeDataToCsv(trajectoryFile_, magnetomer_.x);
+    writeDataToCsv(trajectoryFile_, magnetomer_.y);
+    writeDataToCsv(trajectoryFile_, magnetomer_.z);
+    writeDataToCsv(trajectoryFile_, magEvent_, true);
 
-    trajectoryFile_.print(roll_);
-    trajectoryFile_.print(F(","));
-    trajectoryFile_.print(pitch_);
-    trajectoryFile_.print(F(","));
-    trajectoryFile_.print(yaw_);
-    trajectoryFile_.print(F(","));
-
-    trajectoryFile_.print(mpu6050Activities_.isActivity);
-    trajectoryFile_.print(F(","));
-    trajectoryFile_.print(mpu6050Activities_.isInactivity);
-    trajectoryFile_.print(F(","));
-    trajectoryFile_.print(mpu6050Activities_.isPosActivityOnX);
-    trajectoryFile_.print(F(","));
-    trajectoryFile_.print(mpu6050Activities_.isNegActivityOnX);
-    trajectoryFile_.print(F(","));
-    trajectoryFile_.print(mpu6050Activities_.isPosActivityOnY);
-    trajectoryFile_.print(F(","));
-    trajectoryFile_.print(mpu6050Activities_.isNegActivityOnY);
-    trajectoryFile_.print(F(","));
-
-    trajectoryFile_.print(mpu6050Activities_.isPosActivityOnZ);
-    trajectoryFile_.print(F(","));
-    trajectoryFile_.print(mpu6050Activities_.isNegActivityOnZ);
-    trajectoryFile_.print(F(","));
-    trajectoryFile_.print(mpu6050Activities_.isDataReady);
-    trajectoryFile_.print(F(","));
-    trajectoryFile_.print(mpu6050Activities_.isOverflow);
-    trajectoryFile_.print(F(","));
-    trajectoryFile_.print(mpu6050Activities_.isFreeFall);
-    trajectoryFile_.print(F(","));
-    trajectoryFile_.println(mpuTemp_);
-    trajectoryFile_.print(F(","));
-
-    // Write the magnetometer values
-    trajectoryFile_.print(magnetomer_.x);
-    trajectoryFile_.print(F(","));
-    trajectoryFile_.print(magnetomer_.y);
-    trajectoryFile_.print(F(","));
-    trajectoryFile_.print(magnetomer_.z);
-    trajectoryFile_.print(F(","));
-    trajectoryFile_.print(magEvent_.magnetic.x);
-    trajectoryFile_.print(F(","));
-    trajectoryFile_.print(magEvent_.magnetic.y);
-    trajectoryFile_.print(F(","));
-    trajectoryFile_.println(magEvent_.magnetic.z);
-    trajectoryFile_.print(F(","));
-
+    // We spent some time writing data and reading sensors so factor that in before next sample
     delay((settings_.getTimeInterval() * 1000) - (millis() - readTime_));
 }
 
@@ -287,4 +226,94 @@ void crwLogger(Logger::Level level, const char* module, const char* message)
     Serial.print(Logger::asString(level));
     Serial.print(module);
     Serial.println(message);
+}
+
+void writeDataToCsv(FsFile& file, Vector& data, bool endLine)
+{
+    file.print(data.XAxis);
+    file.print(",");
+    file.print(data.YAxis);
+    file.print(",");
+    if (endLine)
+        file.println(data.ZAxis);
+    else
+    {
+        file.print(data.ZAxis);
+        file.print(",");
+    }
+}
+void writeDataToCsv(FsFile& file, int16_t& data, bool endLine)
+{
+    if (endLine)
+        file.println(data);
+    else
+    {
+        file.print(data);
+        file.println("\n");
+    }
+}
+void writeDataToCsv(FsFile& file, float& data, bool endLine)
+{
+    if (endLine)
+        file.println(data);
+    else
+    {
+        file.print(data);
+        file.println("\n");
+    }
+}
+void writeDataToCsv(FsFile& file, double& data, bool endLine)
+{
+    if (endLine)
+        file.println(data);
+    else
+    {
+        file.print(data);
+        file.println("\n");
+    }
+}
+void writeDataToCsv(FsFile& file, Activites& data, bool endLine)
+{
+    file.print(data.isActivity);
+    file.print(F(","));
+    file.print(data.isInactivity);
+    file.print(F(","));
+    file.print(data.isPosActivityOnX);
+    file.print(F(","));
+    file.print(data.isNegActivityOnX);
+    file.print(F(","));
+    file.print(data.isPosActivityOnY);
+    file.print(F(","));
+    file.print(data.isNegActivityOnY);
+    file.print(F(","));
+    file.print(data.isPosActivityOnZ);
+    file.print(F(","));
+    file.print(data.isNegActivityOnZ);
+    file.print(F(","));
+    file.print(data.isDataReady);
+    file.print(F(","));
+    file.print(data.isOverflow);
+    file.print(F(","));
+    if (endLine)
+        file.println(data.isFreeFall);
+    else
+    {
+        file.print(data.isFreeFall);
+        file.print(F(","));
+    }
+}
+void writeDataToCsv(FsFile& file, sensors_event_t& data, bool endLine)
+{
+    file.print(data.magnetic.x);
+    file.print(F(","));
+    file.print(data.magnetic.y);
+    file.print(F(","));
+
+    if (endLine)
+        file.println(data.magnetic.z);
+    else
+    {
+        file.print(data.magnetic.z);
+        file.print(F(","));
+    }
 }
