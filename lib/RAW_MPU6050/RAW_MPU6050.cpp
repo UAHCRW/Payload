@@ -25,12 +25,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #    include "WProgram.h"
 #endif
 
-#include "MPU6050.h"
+#include "RAW_MPU6050.h"
 // #include "MPU6050.h"
 #include <Wire.h>
 #include <math.h>
 
-bool MPU6050::begin(mpu6050_dps_t scale, mpu6050_range_t range, int mpua)
+bool Raw_MPU6050::begin(mpu6050_dps_t scale, mpu6050_range_t range, int mpua)
 {
     // Set Address
     mpuAddress = mpua;
@@ -65,7 +65,7 @@ bool MPU6050::begin(mpu6050_dps_t scale, mpu6050_range_t range, int mpua)
     return true;
 }
 
-void MPU6050::setScale(mpu6050_dps_t scale)
+void Raw_MPU6050::setScale(mpu6050_dps_t scale)
 {
     uint8_t value;
 
@@ -84,7 +84,7 @@ void MPU6050::setScale(mpu6050_dps_t scale)
     writeRegister8(MPU6050_REG_GYRO_CONFIG, value);
 }
 
-mpu6050_dps_t MPU6050::getScale(void)
+mpu6050_dps_t Raw_MPU6050::getScale(void)
 {
     uint8_t value;
     value = readRegister8(MPU6050_REG_GYRO_CONFIG);
@@ -93,7 +93,7 @@ mpu6050_dps_t MPU6050::getScale(void)
     return (mpu6050_dps_t)value;
 }
 
-void MPU6050::setRange(mpu6050_range_t range)
+void Raw_MPU6050::setRange(mpu6050_range_t range)
 {
     uint8_t value;
 
@@ -112,7 +112,7 @@ void MPU6050::setRange(mpu6050_range_t range)
     writeRegister8(MPU6050_REG_ACCEL_CONFIG, value);
 }
 
-mpu6050_range_t MPU6050::getRange(void)
+mpu6050_range_t Raw_MPU6050::getRange(void)
 {
     uint8_t value;
     value = readRegister8(MPU6050_REG_ACCEL_CONFIG);
@@ -121,7 +121,7 @@ mpu6050_range_t MPU6050::getRange(void)
     return (mpu6050_range_t)value;
 }
 
-void MPU6050::setDHPFMode(mpu6050_dhpf_t dhpf)
+void Raw_MPU6050::setDHPFMode(mpu6050_dhpf_t dhpf)
 {
     uint8_t value;
     value = readRegister8(MPU6050_REG_ACCEL_CONFIG);
@@ -130,7 +130,7 @@ void MPU6050::setDHPFMode(mpu6050_dhpf_t dhpf)
     writeRegister8(MPU6050_REG_ACCEL_CONFIG, value);
 }
 
-void MPU6050::setDLPFMode(mpu6050_dlpf_t dlpf)
+void Raw_MPU6050::setDLPFMode(mpu6050_dlpf_t dlpf)
 {
     uint8_t value;
     value = readRegister8(MPU6050_REG_CONFIG);
@@ -139,7 +139,7 @@ void MPU6050::setDLPFMode(mpu6050_dlpf_t dlpf)
     writeRegister8(MPU6050_REG_CONFIG, value);
 }
 
-void MPU6050::setClockSource(mpu6050_clockSource_t source)
+void Raw_MPU6050::setClockSource(mpu6050_clockSource_t source)
 {
     uint8_t value;
     value = readRegister8(MPU6050_REG_PWR_MGMT_1);
@@ -148,7 +148,7 @@ void MPU6050::setClockSource(mpu6050_clockSource_t source)
     writeRegister8(MPU6050_REG_PWR_MGMT_1, value);
 }
 
-mpu6050_clockSource_t MPU6050::getClockSource(void)
+mpu6050_clockSource_t Raw_MPU6050::getClockSource(void)
 {
     uint8_t value;
     value = readRegister8(MPU6050_REG_PWR_MGMT_1);
@@ -156,127 +156,127 @@ mpu6050_clockSource_t MPU6050::getClockSource(void)
     return (mpu6050_clockSource_t)value;
 }
 
-bool MPU6050::getSleepEnabled(void)
+bool Raw_MPU6050::getSleepEnabled(void)
 {
     return readRegisterBit(MPU6050_REG_PWR_MGMT_1, 6);
 }
 
-void MPU6050::setSleepEnabled(bool state)
+void Raw_MPU6050::setSleepEnabled(bool state)
 {
     writeRegisterBit(MPU6050_REG_PWR_MGMT_1, 6, state);
 }
 
-bool MPU6050::getIntZeroMotionEnabled(void)
+bool Raw_MPU6050::getIntZeroMotionEnabled(void)
 {
     return readRegisterBit(MPU6050_REG_INT_ENABLE, 5);
 }
 
-void MPU6050::setIntZeroMotionEnabled(bool state)
+void Raw_MPU6050::setIntZeroMotionEnabled(bool state)
 {
     writeRegisterBit(MPU6050_REG_INT_ENABLE, 5, state);
 }
 
-bool MPU6050::getIntMotionEnabled(void)
+bool Raw_MPU6050::getIntMotionEnabled(void)
 {
     return readRegisterBit(MPU6050_REG_INT_ENABLE, 6);
 }
 
-void MPU6050::setIntMotionEnabled(bool state)
+void Raw_MPU6050::setIntMotionEnabled(bool state)
 {
     writeRegisterBit(MPU6050_REG_INT_ENABLE, 6, state);
 }
 
-bool MPU6050::getIntFreeFallEnabled(void)
+bool Raw_MPU6050::getIntFreeFallEnabled(void)
 {
     return readRegisterBit(MPU6050_REG_INT_ENABLE, 7);
 }
 
-void MPU6050::setIntFreeFallEnabled(bool state)
+void Raw_MPU6050::setIntFreeFallEnabled(bool state)
 {
     writeRegisterBit(MPU6050_REG_INT_ENABLE, 7, state);
 }
 
-uint8_t MPU6050::getMotionDetectionThreshold(void)
+uint8_t Raw_MPU6050::getMotionDetectionThreshold(void)
 {
     return readRegister8(MPU6050_REG_MOT_THRESHOLD);
 }
 
-void MPU6050::setMotionDetectionThreshold(uint8_t threshold)
+void Raw_MPU6050::setMotionDetectionThreshold(uint8_t threshold)
 {
     writeRegister8(MPU6050_REG_MOT_THRESHOLD, threshold);
 }
 
-uint8_t MPU6050::getMotionDetectionDuration(void)
+uint8_t Raw_MPU6050::getMotionDetectionDuration(void)
 {
     return readRegister8(MPU6050_REG_MOT_DURATION);
 }
 
-void MPU6050::setMotionDetectionDuration(uint8_t duration)
+void Raw_MPU6050::setMotionDetectionDuration(uint8_t duration)
 {
     writeRegister8(MPU6050_REG_MOT_DURATION, duration);
 }
 
-uint8_t MPU6050::getZeroMotionDetectionThreshold(void)
+uint8_t Raw_MPU6050::getZeroMotionDetectionThreshold(void)
 {
     return readRegister8(MPU6050_REG_ZMOT_THRESHOLD);
 }
 
-void MPU6050::setZeroMotionDetectionThreshold(uint8_t threshold)
+void Raw_MPU6050::setZeroMotionDetectionThreshold(uint8_t threshold)
 {
     writeRegister8(MPU6050_REG_ZMOT_THRESHOLD, threshold);
 }
 
-uint8_t MPU6050::getZeroMotionDetectionDuration(void)
+uint8_t Raw_MPU6050::getZeroMotionDetectionDuration(void)
 {
     return readRegister8(MPU6050_REG_ZMOT_DURATION);
 }
 
-void MPU6050::setZeroMotionDetectionDuration(uint8_t duration)
+void Raw_MPU6050::setZeroMotionDetectionDuration(uint8_t duration)
 {
     writeRegister8(MPU6050_REG_ZMOT_DURATION, duration);
 }
 
-uint8_t MPU6050::getFreeFallDetectionThreshold(void)
+uint8_t Raw_MPU6050::getFreeFallDetectionThreshold(void)
 {
     return readRegister8(MPU6050_REG_FF_THRESHOLD);
 }
 
-void MPU6050::setFreeFallDetectionThreshold(uint8_t threshold)
+void Raw_MPU6050::setFreeFallDetectionThreshold(uint8_t threshold)
 {
     writeRegister8(MPU6050_REG_FF_THRESHOLD, threshold);
 }
 
-uint8_t MPU6050::getFreeFallDetectionDuration(void)
+uint8_t Raw_MPU6050::getFreeFallDetectionDuration(void)
 {
     return readRegister8(MPU6050_REG_FF_DURATION);
 }
 
-void MPU6050::setFreeFallDetectionDuration(uint8_t duration)
+void Raw_MPU6050::setFreeFallDetectionDuration(uint8_t duration)
 {
     writeRegister8(MPU6050_REG_FF_DURATION, duration);
 }
 
-bool MPU6050::getI2CMasterModeEnabled(void)
+bool Raw_MPU6050::getI2CMasterModeEnabled(void)
 {
     return readRegisterBit(MPU6050_REG_USER_CTRL, 5);
 }
 
-void MPU6050::setI2CMasterModeEnabled(bool state)
+void Raw_MPU6050::setI2CMasterModeEnabled(bool state)
 {
     writeRegisterBit(MPU6050_REG_USER_CTRL, 5, state);
 }
 
-void MPU6050::setI2CBypassEnabled(bool state)
+void Raw_MPU6050::setI2CBypassEnabled(bool state)
 {
     return writeRegisterBit(MPU6050_REG_INT_PIN_CFG, 1, state);
 }
 
-bool MPU6050::getI2CBypassEnabled(void)
+bool Raw_MPU6050::getI2CBypassEnabled(void)
 {
     return readRegisterBit(MPU6050_REG_INT_PIN_CFG, 1);
 }
 
-void MPU6050::setAccelPowerOnDelay(mpu6050_onDelay_t delay)
+void Raw_MPU6050::setAccelPowerOnDelay(mpu6050_onDelay_t delay)
 {
     uint8_t value;
     value = readRegister8(MPU6050_REG_MOT_DETECT_CTRL);
@@ -285,7 +285,7 @@ void MPU6050::setAccelPowerOnDelay(mpu6050_onDelay_t delay)
     writeRegister8(MPU6050_REG_MOT_DETECT_CTRL, value);
 }
 
-mpu6050_onDelay_t MPU6050::getAccelPowerOnDelay(void)
+mpu6050_onDelay_t Raw_MPU6050::getAccelPowerOnDelay(void)
 {
     uint8_t value;
     value = readRegister8(MPU6050_REG_MOT_DETECT_CTRL);
@@ -293,12 +293,12 @@ mpu6050_onDelay_t MPU6050::getAccelPowerOnDelay(void)
     return (mpu6050_onDelay_t)(value >> 4);
 }
 
-uint8_t MPU6050::getIntStatus(void)
+uint8_t Raw_MPU6050::getIntStatus(void)
 {
     return readRegister8(MPU6050_REG_INT_STATUS);
 }
 
-Activites MPU6050::readActivites(void)
+Activites Raw_MPU6050::readActivites(void)
 {
     uint8_t data = readRegister8(MPU6050_REG_INT_STATUS);
 
@@ -322,7 +322,7 @@ Activites MPU6050::readActivites(void)
     return a;
 }
 
-Vector MPU6050::readRawAccel(void)
+Vector Raw_MPU6050::readRawAccel(void)
 {
     Wire.beginTransmission(mpuAddress);
 #if ARDUINO >= 100
@@ -361,7 +361,7 @@ Vector MPU6050::readRawAccel(void)
     return ra;
 }
 
-Vector MPU6050::readNormalizeAccel(void)
+Vector Raw_MPU6050::readNormalizeAccel(void)
 {
     readRawAccel();
 
@@ -372,7 +372,7 @@ Vector MPU6050::readNormalizeAccel(void)
     return na;
 }
 
-Vector MPU6050::readScaledAccel(void)
+Vector Raw_MPU6050::readScaledAccel(void)
 {
     readRawAccel();
 
@@ -383,7 +383,7 @@ Vector MPU6050::readScaledAccel(void)
     return na;
 }
 
-Vector MPU6050::readRawGyro(void)
+Vector Raw_MPU6050::readRawGyro(void)
 {
     Wire.beginTransmission(mpuAddress);
 #if ARDUINO >= 100
@@ -422,7 +422,7 @@ Vector MPU6050::readRawGyro(void)
     return rg;
 }
 
-Vector MPU6050::readNormalizeGyro(void)
+Vector Raw_MPU6050::readNormalizeGyro(void)
 {
     readRawGyro();
 
@@ -449,75 +449,75 @@ Vector MPU6050::readNormalizeGyro(void)
     return ng;
 }
 
-float MPU6050::readTemperature(void)
+float Raw_MPU6050::readTemperature(void)
 {
     int16_t T;
     T = readRegister16(MPU6050_REG_TEMP_OUT_H);
     return (float)T / 340 + 36.53;
 }
 
-int16_t MPU6050::getGyroOffsetX(void)
+int16_t Raw_MPU6050::getGyroOffsetX(void)
 {
     return readRegister16(MPU6050_REG_GYRO_XOFFS_H);
 }
 
-int16_t MPU6050::getGyroOffsetY(void)
+int16_t Raw_MPU6050::getGyroOffsetY(void)
 {
     return readRegister16(MPU6050_REG_GYRO_YOFFS_H);
 }
 
-int16_t MPU6050::getGyroOffsetZ(void)
+int16_t Raw_MPU6050::getGyroOffsetZ(void)
 {
     return readRegister16(MPU6050_REG_GYRO_ZOFFS_H);
 }
 
-void MPU6050::setGyroOffsetX(int16_t offset)
+void Raw_MPU6050::setGyroOffsetX(int16_t offset)
 {
     writeRegister16(MPU6050_REG_GYRO_XOFFS_H, offset);
 }
 
-void MPU6050::setGyroOffsetY(int16_t offset)
+void Raw_MPU6050::setGyroOffsetY(int16_t offset)
 {
     writeRegister16(MPU6050_REG_GYRO_YOFFS_H, offset);
 }
 
-void MPU6050::setGyroOffsetZ(int16_t offset)
+void Raw_MPU6050::setGyroOffsetZ(int16_t offset)
 {
     writeRegister16(MPU6050_REG_GYRO_ZOFFS_H, offset);
 }
 
-int16_t MPU6050::getAccelOffsetX(void)
+int16_t Raw_MPU6050::getAccelOffsetX(void)
 {
     return readRegister16(MPU6050_REG_ACCEL_XOFFS_H);
 }
 
-int16_t MPU6050::getAccelOffsetY(void)
+int16_t Raw_MPU6050::getAccelOffsetY(void)
 {
     return readRegister16(MPU6050_REG_ACCEL_YOFFS_H);
 }
 
-int16_t MPU6050::getAccelOffsetZ(void)
+int16_t Raw_MPU6050::getAccelOffsetZ(void)
 {
     return readRegister16(MPU6050_REG_ACCEL_ZOFFS_H);
 }
 
-void MPU6050::setAccelOffsetX(int16_t offset)
+void Raw_MPU6050::setAccelOffsetX(int16_t offset)
 {
     writeRegister16(MPU6050_REG_ACCEL_XOFFS_H, offset);
 }
 
-void MPU6050::setAccelOffsetY(int16_t offset)
+void Raw_MPU6050::setAccelOffsetY(int16_t offset)
 {
     writeRegister16(MPU6050_REG_ACCEL_YOFFS_H, offset);
 }
 
-void MPU6050::setAccelOffsetZ(int16_t offset)
+void Raw_MPU6050::setAccelOffsetZ(int16_t offset)
 {
     writeRegister16(MPU6050_REG_ACCEL_ZOFFS_H, offset);
 }
 
 // Calibrate algorithm
-void MPU6050::calibrateGyro(uint8_t samples)
+void Raw_MPU6050::calibrateGyro(uint8_t samples)
 {
     // Set calibrate
     useCalibrate = true;
@@ -560,13 +560,13 @@ void MPU6050::calibrateGyro(uint8_t samples)
 }
 
 // Get current threshold value
-uint8_t MPU6050::getThreshold(void)
+uint8_t Raw_MPU6050::getThreshold(void)
 {
     return actualThreshold;
 }
 
 // Set treshold value
-void MPU6050::setThreshold(uint8_t multiple)
+void Raw_MPU6050::setThreshold(uint8_t multiple)
 {
     if (multiple > 0)
     {
@@ -591,7 +591,7 @@ void MPU6050::setThreshold(uint8_t multiple)
 }
 
 // Fast read 8-bit from register
-uint8_t MPU6050::fastRegister8(uint8_t reg)
+uint8_t Raw_MPU6050::fastRegister8(uint8_t reg)
 {
     uint8_t value;
 
@@ -616,7 +616,7 @@ uint8_t MPU6050::fastRegister8(uint8_t reg)
 }
 
 // Read 8-bit from register
-uint8_t MPU6050::readRegister8(uint8_t reg)
+uint8_t Raw_MPU6050::readRegister8(uint8_t reg)
 {
     uint8_t value;
 
@@ -642,7 +642,7 @@ uint8_t MPU6050::readRegister8(uint8_t reg)
 }
 
 // Write 8-bit to register
-void MPU6050::writeRegister8(uint8_t reg, uint8_t value)
+void Raw_MPU6050::writeRegister8(uint8_t reg, uint8_t value)
 {
     Wire.beginTransmission(mpuAddress);
 
@@ -656,7 +656,7 @@ void MPU6050::writeRegister8(uint8_t reg, uint8_t value)
     Wire.endTransmission();
 }
 
-int16_t MPU6050::readRegister16(uint8_t reg)
+int16_t Raw_MPU6050::readRegister16(uint8_t reg)
 {
     int16_t value;
     Wire.beginTransmission(mpuAddress);
@@ -684,7 +684,7 @@ int16_t MPU6050::readRegister16(uint8_t reg)
     return value;
 }
 
-void MPU6050::writeRegister16(uint8_t reg, int16_t value)
+void Raw_MPU6050::writeRegister16(uint8_t reg, int16_t value)
 {
     Wire.beginTransmission(mpuAddress);
 
@@ -701,7 +701,7 @@ void MPU6050::writeRegister16(uint8_t reg, int16_t value)
 }
 
 // Read register bit
-bool MPU6050::readRegisterBit(uint8_t reg, uint8_t pos)
+bool Raw_MPU6050::readRegisterBit(uint8_t reg, uint8_t pos)
 {
     uint8_t value;
     value = readRegister8(reg);
@@ -709,7 +709,7 @@ bool MPU6050::readRegisterBit(uint8_t reg, uint8_t pos)
 }
 
 // Write register bit
-void MPU6050::writeRegisterBit(uint8_t reg, uint8_t pos, bool state)
+void Raw_MPU6050::writeRegisterBit(uint8_t reg, uint8_t pos, bool state)
 {
     uint8_t value;
     value = readRegister8(reg);

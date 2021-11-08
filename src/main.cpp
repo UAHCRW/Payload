@@ -11,7 +11,7 @@ Date: Fall 2021
 #include "ADXL356_Accelerometer.hpp"
 #include "Arduino.h"
 #include "Logger.hpp"
-#include "MPU6050.h"
+#include "RAW_MPU6050.h"
 #include "SPI.h"
 #include "SdFat.h"
 #include "settings.hpp"
@@ -52,7 +52,7 @@ const uint8_t SD_CS_PIN = SDCARD_SS_PIN;
 //------------------------------------------------------------------------------
 #define PIN_D7 12
 
-MPU6050 mpu_;
+Raw_MPU6050 mpu_;
 Settings settings_;
 float readTime_ = 0;
 float roll_     = 0;

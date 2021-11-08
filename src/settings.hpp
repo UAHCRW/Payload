@@ -2,7 +2,7 @@
 #define SETTINGS_HPP
 
 #include "Arduino.h"
-#include "MPU6050.h"
+#include "RAW_MPU6050.h"
 #include "logger.hpp"
 #include <stdint.h>
 
@@ -12,7 +12,7 @@ class Settings final
     Settings();
     ~Settings(){};
 
-    bool initializeIMU(MPU6050* sensor);
+    bool initializeIMU(Raw_MPU6050* sensor);
     bool initializeCrwAccelerometer() { return false; }
     bool initiailzeCrwGyroscope() { return false; }
     bool initializeMagnetometer() { return false; }

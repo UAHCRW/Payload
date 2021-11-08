@@ -25,7 +25,7 @@ void Settings::printCrwPayloadSettings()
     Logger::notice("");
 }
 
-bool Settings::initializeIMU(MPU6050* sensor)
+bool Settings::initializeIMU(Raw_MPU6050* sensor)
 {
     Logger::notice("Initializing MPU 6050 IMU");
     if (!sensor->begin(getMpuGyroRange(), getMpuAccelRange()))
