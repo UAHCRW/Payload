@@ -9,6 +9,8 @@ Author: Charger Rocket Works 2021/2022 Team
 Date: Fall 2021
 */
 #include "ADXL356_Accelerometer.hpp"
+#include "Adafruit_LIS3MDL.h"
+#include "Adafruit_Sensor.h"
 #include "Arduino.h"
 #include "Logger.hpp"
 #include "MPU6050.h"
@@ -50,7 +52,13 @@ const uint8_t SD_CS_PIN = SDCARD_SS_PIN;
 // Program Configuration & Definitions (Pins, Sensors, Constants, Functions)
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-#define PIN_D7 12
+#define CLOCK_PIN 13
+#define MISO_PIN  12
+#define MOSI_PIN  11
+#define CS_PIN    10
+
+Adafruit_LIS3MDL magnetomer_;
+sensors_event_t magEvent_;
 
 MPU6050 mpu_;
 Settings settings_;
@@ -108,6 +116,7 @@ void setup()
     settings_.printCrwPayloadSettings();
 
     settings_.initializeIMU(&mpu_);
+    settings_.initializeMagnetometer(&magnetomer_, CLOCK_PIN);
 
     // Write test data.
     // testFile.print(F(
@@ -137,6 +146,10 @@ void loop()
     mpuNormGyro_       = mpu_.readNormalizeGyro();
     mpu6050Activities_ = mpu_.readActivites();
     mpuTemp_           = mpu_.readTemperature();
+
+    // Get the values from the magnetometer
+    magnetomer_.read();
+    magnetomer_.getEvent(&magEvent_);
 
     roll_  = roll_ + mpuNormGyro_.XAxis * settings_.getTimeInterval();
     pitch_ = pitch_ + mpuNormGyro_.YAxis * settings_.getTimeInterval();
@@ -204,6 +217,21 @@ void loop()
     trajectoryFile_.print(mpu6050Activities_.isFreeFall);
     trajectoryFile_.print(F(","));
     trajectoryFile_.println(mpuTemp_);
+    trajectoryFile_.print(F(","));
+
+    // Write the magnetometer values
+    trajectoryFile_.print(magnetomer_.x);
+    trajectoryFile_.print(F(","));
+    trajectoryFile_.print(magnetomer_.y);
+    trajectoryFile_.print(F(","));
+    trajectoryFile_.print(magnetomer_.z);
+    trajectoryFile_.print(F(","));
+    trajectoryFile_.print(magEvent_.magnetic.x);
+    trajectoryFile_.print(F(","));
+    trajectoryFile_.print(magEvent_.magnetic.y);
+    trajectoryFile_.print(F(","));
+    trajectoryFile_.println(magEvent_.magnetic.z);
+    trajectoryFile_.print(F(","));
 
     delay((settings_.getTimeInterval() * 1000) - (millis() - readTime_));
 }

@@ -4,11 +4,16 @@
       "name": "VisualTeensy",
       "includePath": [
         "src",
-        "src/include",
+        "lib",
         "cores/teensy4",
         "lib/SdFat/src",
         "lib/SPI",
-        "lib/Wire"
+        "lib/Wire",
+        "lib/Adafruit_BusIO",
+        "lib/Adafruit_Unified_Sensor",
+        "lib/Logger",
+        "lib/LIS3MDL",
+        "lib/MPU6050"
       ],
       "forcedInclude": [],
       "defines": [
