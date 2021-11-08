@@ -79,7 +79,16 @@ float mpuTemp_;
 Activites mpu6050Activities_;
 
 // Functions
+/// \brief Opens a file system
+/// \param file a SD card file object
+/// \param filename pointer to char array containing the filename
 void openFile(FsFile& file, const char* filename);
+
+/// \brief a callback that is used for logging, all calls to the logger will call this function internally
+/// This functions sends the message out over serial and saves to a file if the file is open
+/// \param level The logging level
+/// \param module The module (class/function) that made the call to the logger (sometimes not used)
+/// \param message The message to be logged
 void crwLogger(Logger::Level level, const char* module, const char* message);
 
 //------------------------------------------------------------------------------

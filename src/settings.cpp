@@ -115,9 +115,9 @@ bool Settings::initializeIMU(MPU6050* sensor)
     return mpu6050Initialized_;
 }
 
-bool Settings::initializeMagnetometer(Adafruit_LIS3MDL* sensor, uint8_t clockPin)
+bool Settings::initializeMagnetometer(Adafruit_LIS3MDL* sensor, uint8_t pin)
 {
-    if (!sensor->begin_SPI(clockPin))
+    if (!sensor->begin_SPI(pin))
     {
         Logger::error("Failed to initialize LIS3MDL Magnetometer. Sensor not found on I2C network");
         return magnetometerInitialized_;
