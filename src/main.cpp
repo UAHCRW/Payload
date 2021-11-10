@@ -105,15 +105,20 @@ void writeDataToCsv(FsFile& file, sensors_event_t& data, bool endLine = false);
 //------------------------------------------------------------------------------
 void setup()
 {
+    Serial.begin(settings_.getBaudRate());
+
+    Wire.setSCL(19);
+    Wire.setSDA(18);
+    Wire.begin();
+
     Logger::setOutputFunction(crwLogger);
     Logger::setLogLevel(settings_.getLoggingLevel());
 
     pinMode(LED_BUILTIN, OUTPUT);
-    Serial.begin(settings_.getBaudRate());
 
-    Logger::notice("Mounting SD Card");
-
+#ifdef USE_SD_CARD
     // Initialize the SD.
+    Logger::notice("Mounting SD Card");
     if (!sd.begin(SD_CONFIG))
     {
         sd.initErrorHalt(&Serial);
@@ -124,15 +129,18 @@ void setup()
 
     openFile(trajectoryFile_, settings_.getTrajectoryFilename().c_str());
     openFile(loggingFile_, settings_.getLoggingFilename().c_str());
+#endif
 
     Logger::notice("---------------------------------------------------------------------");
     Logger::notice("          Dead Reckoning Navigation System (DRNS) Startup");
     Logger::notice("---------------------------------------------------------------------");
     Logger::notice("");
+    settings_.scanI2CNetwork();
     settings_.printCrwPayloadSettings();
 
     settings_.initializeIMU(&mpu_);
-    settings_.initializeMagnetometer(&magnetomer_, RAW_MAGNETOMETER_CHIP_SELECT);
+
+    // settings_.initializeMagnetometer(&magnetomer_, RAW_MAGNETOMETER_CHIP_SELECT);
 }
 
 //------------------------------------------------------------------------------
@@ -144,41 +152,61 @@ void loop()
 {
     readTime_ = millis();
 
-    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-
     // Get values from the mpu IMU
-    mpuRawAccel_       = mpu_.readRawAccel();
-    mpuNormAccel_      = mpu_.readNormalizeAccel();
-    mpuRawGyro_        = mpu_.readRawGyro();
-    mpuNormGyro_       = mpu_.readNormalizeGyro();
-    mpu6050Activities_ = mpu_.readActivites();
-    mpuTemp_           = mpu_.readTemperature();
+    if (settings_.isMpu6050Initialized())
+    {
+        mpuRawAccel_       = mpu_.readRawAccel();
+        mpuNormAccel_      = mpu_.readNormalizeAccel();
+        mpuRawGyro_        = mpu_.readRawGyro();
+        mpuNormGyro_       = mpu_.readNormalizeGyro();
+        mpu6050Activities_ = mpu_.readActivites();
+        mpuTemp_           = mpu_.readTemperature();
+    }
 
     // Get the values from the magnetometer
-    magnetomer_.read();
-    magnetomer_.getEvent(&magEvent_);
+    if (settings_.isMagnetometerInitialized())
+    {
+        magnetomer_.read();
+        magnetomer_.getEvent(&magEvent_);
+    }
 
     roll_  = roll_ + mpuNormGyro_.XAxis * settings_.getTimeInterval();
     pitch_ = pitch_ + mpuNormGyro_.YAxis * settings_.getTimeInterval();
     yaw_   = yaw_ + mpuNormGyro_.ZAxis * settings_.getTimeInterval();
 
-    writeDataToCsv(trajectoryFile_, readTime_);
-    writeDataToCsv(trajectoryFile_, mpuRawAccel_);
-    writeDataToCsv(trajectoryFile_, mpuNormAccel_);
-    writeDataToCsv(trajectoryFile_, mpuRawGyro_);
-    writeDataToCsv(trajectoryFile_, mpuNormGyro_);
+#ifdef USE_SD_CARD
+    if (settings_.isMpu6050Initialized())
+    {
+        writeDataToCsv(trajectoryFile_, readTime_);
+        writeDataToCsv(trajectoryFile_, mpuRawAccel_);
+        writeDataToCsv(trajectoryFile_, mpuNormAccel_);
+        writeDataToCsv(trajectoryFile_, mpuRawGyro_);
+        writeDataToCsv(trajectoryFile_, mpuNormGyro_);
 
-    writeDataToCsv(trajectoryFile_, roll_);
-    writeDataToCsv(trajectoryFile_, pitch_);
-    writeDataToCsv(trajectoryFile_, yaw_);
-    writeDataToCsv(trajectoryFile_, mpu6050Activities_);
+        writeDataToCsv(trajectoryFile_, roll_);
+        writeDataToCsv(trajectoryFile_, pitch_);
+        writeDataToCsv(trajectoryFile_, yaw_);
+        writeDataToCsv(trajectoryFile_, mpu6050Activities_);
 
-    writeDataToCsv(trajectoryFile_, mpuTemp_);
+        writeDataToCsv(trajectoryFile_, mpuTemp_);
+    }
 
-    writeDataToCsv(trajectoryFile_, magnetomer_.x);
-    writeDataToCsv(trajectoryFile_, magnetomer_.y);
-    writeDataToCsv(trajectoryFile_, magnetomer_.z);
-    writeDataToCsv(trajectoryFile_, magEvent_, true);
+    if (settings_.isMagnetometerInitialized())
+    {
+        writeDataToCsv(trajectoryFile_, magnetomer_.x);
+        writeDataToCsv(trajectoryFile_, magnetomer_.y);
+        writeDataToCsv(trajectoryFile_, magnetomer_.z);
+        writeDataToCsv(trajectoryFile_, magEvent_, true);
+    }
+    trajectoryFile_.flush();
+#endif
+
+    Serial.print("Accel ->  X: ");
+    Serial.print(mpuNormAccel_.XAxis);
+    Serial.print("\tY: ");
+    Serial.print(mpuNormAccel_.YAxis);
+    Serial.print("\tZ: ");
+    Serial.println(mpuNormAccel_.ZAxis);
 
     // We spent some time writing data and reading sensors so factor that in before next sample
     delay((settings_.getTimeInterval() * 1000) - (millis() - readTime_));
@@ -249,7 +277,7 @@ void writeDataToCsv(FsFile& file, int16_t& data, bool endLine)
     else
     {
         file.print(data);
-        file.println("\n");
+        file.print(",");
     }
 }
 void writeDataToCsv(FsFile& file, float& data, bool endLine)
@@ -259,7 +287,7 @@ void writeDataToCsv(FsFile& file, float& data, bool endLine)
     else
     {
         file.print(data);
-        file.println("\n");
+        file.print(",");
     }
 }
 void writeDataToCsv(FsFile& file, double& data, bool endLine)
@@ -269,7 +297,7 @@ void writeDataToCsv(FsFile& file, double& data, bool endLine)
     else
     {
         file.print(data);
-        file.println("\n");
+        file.print(",");
     }
 }
 void writeDataToCsv(FsFile& file, Activites& data, bool endLine)

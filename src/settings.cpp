@@ -3,13 +3,46 @@
 #include "string.h"
 
 Settings::Settings()
-    : trajectoryFileName_("trajectory.csv"), loggingFileName_("logging.txt"), loggingLevel_(Logger::Level::SILENT),
+    : trajectoryFileName_("trajectory.csv"), loggingFileName_("logging.txt"), loggingLevel_(Logger::Level::VERBOSE),
       baudRate_(115200), samplingFreq_(100.0), timeInterval_(0.0),
       mpuAccelerometerRange_(mpu6050_range_t::MPU6050_RANGE_16G),
       mpuGyrometerRange_(mpu6050_dps_t::MPU6050_SCALE_2000DPS), mpu6050Initialized_(false),
       magnetometerInitialized_(false)
 {
     timeInterval_ = 1 / samplingFreq_;
+}
+
+void Settings::scanI2CNetwork()
+{
+    Logger::notice("Scanning I2C network for peripherals");
+    byte error, address;
+    int nDevices = 0;
+    for (address = 1; address < 127; address++)
+    {
+        // The i2c_scanner uses the return value of
+        // the Write.endTransmisstion to see if
+        // a device did acknowledge to the address.
+        Wire.beginTransmission(address);
+        error = Wire.endTransmission();
+
+        if (error == 0)
+        {
+            String out = "I2C device found at address 0x" + String(address, HEX) + " !";
+            if (address < 16) out = "I2C device found at address 0x0" + String(address, HEX) + " !";
+            Logger::notice(out.c_str());
+            nDevices++;
+        }
+        else if (error == 4)
+        {
+            String out = "Unknown error at address 0x" + String(address, HEX) + " !";
+            if (address < 16) out = "I2C device found at address 0x0" + String(address, HEX) + " !";
+            Logger::notice(out.c_str());
+        }
+    }
+    if (nDevices == 0)
+        Logger::notice("No I2C devices found\n");
+    else
+        Logger::notice("done\n");
 }
 
 void Settings::printCrwPayloadSettings()
@@ -28,17 +61,19 @@ void Settings::printCrwPayloadSettings()
 
 bool Settings::initializeIMU(MPU6050* sensor)
 {
+    Logger::notice("---------------------------------------------------------------------");
+    Logger::notice("                 MPU 6050 IMU Configuration");
+    Logger::notice("---------------------------------------------------------------------");
     Logger::notice("Initializing MPU 6050 IMU");
     if (!sensor->begin(mpuGyrometerRange_, mpuAccelerometerRange_))
     {
         Logger::error("Failed to initialize MPU6050 IMU. Sensor not found on I2C network");
         return false;
     }
+    Logger::notice("MPU6050 Succesfully Initialized");
+    Logger::notice("");
     mpu6050Initialized_ = true;
 
-    Logger::notice("---------------------------------------------------------------------");
-    Logger::notice("                 MPU 6050 IMU Configuration");
-    Logger::notice("---------------------------------------------------------------------");
     Logger::notice(" * Sleep Mode:            ");
     Logger::notice(sensor->getSleepEnabled() ? "   Enabled\n" : "   Disabled\n");
 

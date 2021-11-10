@@ -15,12 +15,19 @@
       "stdLib": "newlib",
       "sharedLibraries": [],
       "projectLibraries": [
+        "Adafruit_BusIO",
+        "Adafruit_Unified_Sensor",
+        "ADXL357",
+        "LIS3MDL",
+        "Logger",
+        "Motion_MPU6050",
+        "MPU6050",
         "SdFat",
         "SPI",
         "Wire"
       ],
       "board": {
-        "name": "Teensy 4.1",
+        "name": "Teensy 4.0",
         "options": {
           "USB Type": "Serial",
           "CPU Speed": "600 MHz",

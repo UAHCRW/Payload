@@ -27,6 +27,8 @@ These instructions are for building and programming the Teensy 4.1. There are tw
 2. ```ctrl+shift_b``` and choose ```Upload (TyCommander)```. This will upload the code to the Teensy
 3. ```ctrl+shift+b``` and choose ```Clean``` . This will delete all built files to do a fresh build
 
+Optionally, the program may be built for the Teensy 4.0. To do this change the name of the ```makefile``` to ```makefile41``` and then change the name of ```makefile40``` to ```make```. To swap back to the 4.1 build just do the reverse.
+
 ### Build Beagle Bone (Coming soon to a Beagle Bone near you)
 
 

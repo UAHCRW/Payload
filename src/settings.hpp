@@ -13,6 +13,9 @@ class Settings final
     Settings();
     ~Settings(){};
 
+    /// \brief Scans network for available I2C addresses
+    void scanI2CNetwork();
+
     /// \brief Initializes an IMU based on settings and prints those settings out
     /// \param sensor A pointer to a MPU6050 sensor object
     bool initializeIMU(MPU6050* sensor);
