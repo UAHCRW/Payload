@@ -21,7 +21,7 @@ LIBS_SHARED_BASE := C:\Users\Newton\Documents\Arduino\libraries
 LIBS_SHARED      := 
 
 LIBS_LOCAL_BASE  := lib
-LIBS_LOCAL       := SdFat SPI Wire Adafruit_Unified_Sensor Adafruit_BusIO MPU6050 Logger ADXL357 LIS3MDL
+LIBS_LOCAL       := SdFat SPI Wire Adafruit_Unified_Sensor Adafruit_BusIO MPU6050 BN055 Logger ADXL357 LIS3MDL
 
 CORE_BASE        := C:\PROGRA~2\Arduino\hardware\teensy\avr\cores\teensy4
 GCC_BASE         := C:\PROGRA~2\Arduino\hardware\tools\arm\bin
