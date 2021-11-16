@@ -4,7 +4,7 @@
 
 Settings::Settings()
     : trajectoryFileName_("trajectory.csv"), loggingFileName_("logging.txt"), loggingLevel_(Logger::Level::VERBOSE),
-      baudRate_(115200), samplingFreq_(100.0), timeInterval_(0.0),
+      baudRate_(115200), samplingFreq_(50.0), timeInterval_(0.0),
       mpuAccelerometerRange_(mpu6050_range_t::MPU6050_RANGE_16G),
       mpuGyrometerRange_(mpu6050_dps_t::MPU6050_SCALE_2000DPS), mpu6050Initialized_(false),
       magnetometerInitialized_(false)

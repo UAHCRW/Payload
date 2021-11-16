@@ -155,7 +155,8 @@ void loop()
     // Get values from the mpu IMU
     if (settings_.isMpu6050Initialized())
     {
-        mpuRawAccel_       = mpu_.readRawAccel();
+        mpuRawAccel_ = mpu_.readRawAccel();
+        // mpuNormAccel_ = mpu_.readScaledAccel();
         mpuNormAccel_      = mpu_.readNormalizeAccel();
         mpuRawGyro_        = mpu_.readRawGyro();
         mpuNormGyro_       = mpu_.readNormalizeGyro();
@@ -188,7 +189,7 @@ void loop()
         writeDataToCsv(trajectoryFile_, yaw_);
         writeDataToCsv(trajectoryFile_, mpu6050Activities_);
 
-        writeDataToCsv(trajectoryFile_, mpuTemp_);
+        writeDataToCsv(trajectoryFile_, mpuTemp_, !settings_.isMagnetometerInitialized());
     }
 
     if (settings_.isMagnetometerInitialized())
@@ -200,13 +201,25 @@ void loop()
     }
     trajectoryFile_.flush();
 #endif
-
-    Serial.print("Accel ->  X: ");
+    Serial.print(readTime_);
+    Serial.print(",");
     Serial.print(mpuNormAccel_.XAxis);
-    Serial.print("\tY: ");
+    Serial.print(",");
     Serial.print(mpuNormAccel_.YAxis);
-    Serial.print("\tZ: ");
-    Serial.println(mpuNormAccel_.ZAxis);
+    Serial.print(",");
+    Serial.print(mpuNormAccel_.ZAxis);
+    Serial.print(",");
+    Serial.print(mpuNormGyro_.XAxis);
+    Serial.print(",");
+    Serial.print(mpuNormGyro_.YAxis);
+    Serial.print(",");
+    Serial.print(mpuNormGyro_.ZAxis);
+    Serial.print(",");
+    Serial.print(magnetomer_.x);
+    Serial.print(",");
+    Serial.print(magnetomer_.y);
+    Serial.print(",");
+    Serial.println(magnetomer_.z);
 
     // We spent some time writing data and reading sensors so factor that in before next sample
     delay((settings_.getTimeInterval() * 1000) - (millis() - readTime_));
