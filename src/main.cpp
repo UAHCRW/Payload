@@ -16,6 +16,7 @@ Date: Fall 2021
 #include "MPU6050.h"
 #include "SPI.h"
 #include "SdFat.h"
+#include "SparkFunMPU9250-DMP.h"
 #include "settings.hpp"
 
 //------------------------------------------------------------------------------
@@ -58,6 +59,9 @@ Adafruit_LIS3MDL magnetomer_;
 sensors_event_t magEvent_;
 
 MPU6050 mpu_;
+
+MPU9250_DMP imu_;
+
 Settings settings_;
 float readTime_ = 0;
 float roll_     = 0;
@@ -87,6 +91,8 @@ void openFile(FsFile& file, const char* filename);
 /// \param module The module (class/function) that made the call to the logger (sometimes not used)
 /// \param message The message to be logged
 void crwLogger(Logger::Level level, const char* module, const char* message);
+
+void printIMUData(void);
 
 /// \brief Writes data to a csv file
 /// \param file Sd Card file object
@@ -138,7 +144,23 @@ void setup()
     settings_.scanI2CNetwork();
     settings_.printCrwPayloadSettings();
 
-    settings_.initializeIMU(&mpu_);
+    // settings_.initializeIMU(&mpu_);
+
+    if (imu_.begin() != INV_SUCCESS)
+    {
+        while (1)
+        {
+            Logger::notice("Unable to communicate with MPU-9250");
+            Logger::notice("Check connections, and try again.");
+            delay(1000);
+        }
+    }
+    Logger::notice("Secure Connection Established with MPU 9250");
+
+    imu_.setSensors(INV_XYZ_GYRO | INV_XYZ_ACCEL | INV_XYZ_COMPASS);
+    imu_.setGyroFSR(2000); // Set gyro to 2000 dps
+    imu_.setAccelFSR(2);   // Set accel to +/-2g
+    imu_.setSampleRate(2); // Set sample rate to 10Hz
 
     // settings_.initializeMagnetometer(&magnetomer_, RAW_MAGNETOMETER_CHIP_SELECT);
 }
@@ -152,7 +174,7 @@ void loop()
 {
     readTime_ = millis();
 
-    // Get values from the mpu IMU
+    // Get values from the mpu imu_
     if (settings_.isMpu6050Initialized())
     {
         mpuRawAccel_ = mpu_.readRawAccel();
@@ -201,28 +223,45 @@ void loop()
     }
     trajectoryFile_.flush();
 #endif
-    Serial.print(readTime_);
-    Serial.print(",");
-    Serial.print(mpuNormAccel_.XAxis);
-    Serial.print(",");
-    Serial.print(mpuNormAccel_.YAxis);
-    Serial.print(",");
-    Serial.print(mpuNormAccel_.ZAxis);
-    Serial.print(",");
-    Serial.print(mpuNormGyro_.XAxis);
-    Serial.print(",");
-    Serial.print(mpuNormGyro_.YAxis);
-    Serial.print(",");
-    Serial.print(mpuNormGyro_.ZAxis);
-    Serial.print(",");
-    Serial.print(magnetomer_.x);
-    Serial.print(",");
-    Serial.print(magnetomer_.y);
-    Serial.print(",");
-    Serial.println(magnetomer_.z);
 
-    // We spent some time writing data and reading sensors so factor that in before next sample
-    delay((settings_.getTimeInterval() * 1000) - (millis() - readTime_));
+    if (imu_.dataReady())
+    {
+        // Call update() to update the imu objects sensor data.
+        // You can specify which sensors to update by combining
+        // UPDATE_ACCEL, UPDATE_GYRO, UPDATE_COMPASS, and/or
+        // UPDATE_TEMPERATURE.
+        // (The update function defaults to accel, gyro, compass,
+        //  so you don't have to specify these values.)
+        inv_error_t aErr, gErr, mErr, tErr;
+        inv_error_t err = imu_.update(UPDATE_ACCEL | UPDATE_GYRO | UPDATE_COMPASS, aErr, gErr, mErr, tErr);
+        if (true)
+            Logger::error(("Error reading sensor data. Acc[" + String(aErr) + "]\tGyro[" + String(gErr) + "]\tMag[" +
+                           String(mErr) + "]\tTime[" + String(tErr) + "]")
+                              .c_str());
+        printIMUData();
+    }
+    // Serial.print(readTime_);
+    // Serial.print(",");
+    // Serial.print(mpuNormAccel_.XAxis);
+    // Serial.print(",");
+    // Serial.print(mpuNormAccel_.YAxis);
+    // Serial.print(",");
+    // Serial.print(mpuNormAccel_.ZAxis);
+    // Serial.print(",");
+    // Serial.print(mpuNormGyro_.XAxis);
+    // Serial.print(",");
+    // Serial.print(mpuNormGyro_.YAxis);
+    // Serial.print(",");
+    // Serial.print(mpuNormGyro_.ZAxis);
+    // Serial.print(",");
+    // Serial.print(magnetomer_.x);
+    // Serial.print(",");
+    // Serial.print(magnetomer_.y);
+    // Serial.print(",");
+    // Serial.println(magnetomer_.z);
+
+    // // We spent some time writing data and reading sensors so factor that in before next sample
+    // delay((settings_.getTimeInterval() * 1000) - (millis() - readTime_));
 }
 
 //------------------------------------------------------------------------------
@@ -230,6 +269,32 @@ void loop()
 // Main Functions
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
+void printIMUData(void)
+{
+    // After calling update() the ax, ay, az, gx, gy, gz, mx,
+    // my, mz, time, and/or temerature class variables are all
+    // updated. Access them by placing the object. in front:
+
+    // Use the calcAccel, calcGyro, and calcMag functions to
+    // convert the raw sensor readings (signed 16-bit values)
+    // to their respective units.
+    float accelX = imu_.calcAccel(imu_.ax);
+    float accelY = imu_.calcAccel(imu_.ay);
+    float accelZ = imu_.calcAccel(imu_.az);
+    float gyroX  = imu_.calcGyro(imu_.gx);
+    float gyroY  = imu_.calcGyro(imu_.gy);
+    float gyroZ  = imu_.calcGyro(imu_.gz);
+    float magX   = imu_.calcMag(imu_.mx);
+    float magY   = imu_.calcMag(imu_.my);
+    float magZ   = imu_.calcMag(imu_.mz);
+
+    Logger::notice(("Accel: " + String(accelX) + ", " + String(accelY) + ", " + String(accelZ) + " g").c_str());
+    Logger::notice(("Gyro: " + String(gyroX) + ", " + String(gyroY) + ", " + String(gyroZ) + " dps").c_str());
+    Logger::notice(("Mag: " + String(magX) + ", " + String(magY) + ", " + String(magZ) + " uT").c_str());
+    Logger::notice(("Time: " + String(imu_.time) + " ms").c_str());
+    Logger::notice("");
+    delay(500);
+}
 
 void openFile(FsFile& file, const char* filename)
 {

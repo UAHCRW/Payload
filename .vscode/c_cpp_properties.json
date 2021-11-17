@@ -5,6 +5,7 @@
       "includePath": [
         "src",
         "cores/teensy4",
+        "lib/MPU9250",
         "lib/Adafruit_BusIO",
         "lib/Adafruit_Unified_Sensor",
         "lib/ADXL357",
