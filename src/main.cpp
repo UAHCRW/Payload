@@ -14,6 +14,7 @@ Date: Fall 2021
 #include "Arduino.h"
 #include "Logger.hpp"
 #include "MPU6050.h"
+#include "MPU9250.h"
 #include "SPI.h"
 #include "SdFat.h"
 #include "settings.hpp"
@@ -58,6 +59,8 @@ Adafruit_LIS3MDL magnetomer_;
 sensors_event_t magEvent_;
 
 MPU6050 mpu_;
+MPU9250 mpu9250_;
+
 Settings settings_;
 float readTime_ = 0;
 float roll_     = 0;
@@ -138,7 +141,17 @@ void setup()
     settings_.scanI2CNetwork();
     settings_.printCrwPayloadSettings();
 
-    settings_.initializeIMU(&mpu_);
+    if (!mpu9250_.setup(0x68))
+    { // change to your own address
+        while (1)
+        {
+            Serial.println("MPU connection failed. Please check your connection with `connection_check` example.");
+            delay(5000);
+        }
+    }
+    mpu9250_.verbose(true);
+
+    // settings_.initializeIMU(&mpu_);
 
     // settings_.initializeMagnetometer(&magnetomer_, RAW_MAGNETOMETER_CHIP_SELECT);
 }
@@ -162,6 +175,10 @@ void loop()
         mpuNormGyro_       = mpu_.readNormalizeGyro();
         mpu6050Activities_ = mpu_.readActivites();
         mpuTemp_           = mpu_.readTemperature();
+
+        roll_  = roll_ + mpuNormGyro_.XAxis * settings_.getTimeInterval();
+        pitch_ = pitch_ + mpuNormGyro_.YAxis * settings_.getTimeInterval();
+        yaw_   = yaw_ + mpuNormGyro_.ZAxis * settings_.getTimeInterval();
     }
 
     // Get the values from the magnetometer
@@ -170,10 +187,6 @@ void loop()
         magnetomer_.read();
         magnetomer_.getEvent(&magEvent_);
     }
-
-    roll_  = roll_ + mpuNormGyro_.XAxis * settings_.getTimeInterval();
-    pitch_ = pitch_ + mpuNormGyro_.YAxis * settings_.getTimeInterval();
-    yaw_   = yaw_ + mpuNormGyro_.ZAxis * settings_.getTimeInterval();
 
 #ifdef USE_SD_CARD
     if (settings_.isMpu6050Initialized())
@@ -201,25 +214,35 @@ void loop()
     }
     trajectoryFile_.flush();
 #endif
-    Serial.print(readTime_);
-    Serial.print(",");
-    Serial.print(mpuNormAccel_.XAxis);
-    Serial.print(",");
-    Serial.print(mpuNormAccel_.YAxis);
-    Serial.print(",");
-    Serial.print(mpuNormAccel_.ZAxis);
-    Serial.print(",");
-    Serial.print(mpuNormGyro_.XAxis);
-    Serial.print(",");
-    Serial.print(mpuNormGyro_.YAxis);
-    Serial.print(",");
-    Serial.print(mpuNormGyro_.ZAxis);
-    Serial.print(",");
-    Serial.print(magnetomer_.x);
-    Serial.print(",");
-    Serial.print(magnetomer_.y);
-    Serial.print(",");
-    Serial.println(magnetomer_.z);
+    // Serial.print(readTime_);
+    // Serial.print(",");
+    // Serial.print(mpuNormAccel_.XAxis);
+    // Serial.print(",");
+    // Serial.print(mpuNormAccel_.YAxis);
+    // Serial.print(",");
+    // Serial.print(mpuNormAccel_.ZAxis);
+    // Serial.print(",");
+    // Serial.print(mpuNormGyro_.XAxis);
+    // Serial.print(",");
+    // Serial.print(mpuNormGyro_.YAxis);
+    // Serial.print(",");
+    // Serial.print(mpuNormGyro_.ZAxis);
+    // Serial.print(",");
+    // Serial.print(magnetomer_.x);
+    // Serial.print(",");
+    // Serial.print(magnetomer_.y);
+    // Serial.print(",");
+    // Serial.println(magnetomer_.z);
+
+    Logger::notice(("Acceleration X: " + String(mpu9250_.getAccX()) + "\tY: " + String(mpu9250_.getAccY()) +
+                    "\tZ: " + String(mpu9250_.getAccZ()))
+                       .c_str());
+    Logger::notice(("Gyro X: " + String(mpu9250_.getGyroX()) + "\tY: " + String(mpu9250_.getGyroY()) +
+                    "\tZ: " + String(mpu9250_.getGyroZ()))
+                       .c_str());
+    Logger::notice(("Mag X: " + String(mpu9250_.getMagX()) + "\tY: " + String(mpu9250_.getMagY()) +
+                    "\tZ: " + String(mpu9250_.getMagZ()))
+                       .c_str());
 
     // We spent some time writing data and reading sensors so factor that in before next sample
     delay((settings_.getTimeInterval() * 1000) - (millis() - readTime_));
