@@ -72,6 +72,12 @@ bool Settings::initializeIMU(MPU6050* sensor)
     }
     Logger::notice("MPU6050 Succesfully Initialized");
     Logger::notice("");
+
+    Logger::notice("Calibrating Gyro");
+    sensor->calibrateGyro();
+
+    Logger::notice("Calibrating Accelerometer");
+    // sensor->calibrate
     mpu6050Initialized_ = true;
 
     Logger::notice(" * Sleep Mode:            ");
