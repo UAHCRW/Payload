@@ -157,12 +157,12 @@ void setup()
     }
     Logger::notice("Secure Connection Established with MPU 9250");
 
-    imu_.setSensors(INV_XYZ_GYRO | INV_XYZ_ACCEL);
+    imu_.setSensors(INV_XYZ_GYRO | INV_XYZ_ACCEL | INV_XYZ_COMPASS);
     imu_.setGyroFSR(2000); // Set gyro to 2000 dps
     imu_.setAccelFSR(2);   // Set accel to +/-2g
     imu_.setSampleRate(2); // Set sample rate to 10Hz
 
-    // settings_.initializeMagnetometer(&magnetomer_, RAW_MAGNETOMETER_CHIP_SELECT);
+    settings_.initializeMagnetometer(&magnetomer_, RAW_MAGNETOMETER_CHIP_SELECT);
 }
 
 //------------------------------------------------------------------------------
@@ -226,42 +226,43 @@ void loop()
 
     if (imu_.dataReady())
     {
-        // Call update() to update the imu objects sensor data.
-        // You can specify which sensors to update by combining
-        // UPDATE_ACCEL, UPDATE_GYRO, UPDATE_COMPASS, and/or
-        // UPDATE_TEMPERATURE.
-        // (The update function defaults to accel, gyro, compass,
-        //  so you don't have to specify these values.)
-        inv_error_t aErr, gErr, mErr, tErr;
-        inv_error_t err = imu_.update(UPDATE_ACCEL | UPDATE_GYRO | UPDATE_COMPASS, aErr, gErr, mErr, tErr);
-        if (true)
-            Logger::error(("Error reading sensor data. Acc[" + String(aErr) + "]\tGyro[" + String(gErr) + "]\tMag[" +
-                           String(mErr) + "]\tTime[" + String(tErr) + "]")
-                              .c_str());
-        printIMUData();
-    }
-    Serial.print(readTime_);
-    Serial.print(",");
-    Serial.print(imu_.getAccelX());
-    Serial.print(",");
-    Serial.print(imu_.getAccelY());
-    Serial.print(",");
-    Serial.print(imu_.getAccelZ());
-    Serial.print(",");
-    Serial.print(imu_.getG());
-    Serial.print(",");
-    Serial.print(imu_.getAccelX());
-    Serial.print(",");
-    Serial.print(imu_.getAccelX());
-    Serial.print(",");
-    Serial.print(0);
-    Serial.print(",");
-    Serial.print(0);
-    Serial.print(",");
-    Serial.println(0);
+        imu_.update(UPDATE_ACCEL | UPDATE_GYRO);
+        float accelX = imu_.calcAccel(imu_.ax);
+        float accelY = imu_.calcAccel(imu_.ay);
+        float accelZ = imu_.calcAccel(imu_.az);
+        float gyroX  = imu_.calcGyro(imu_.gx);
+        float gyroY  = imu_.calcGyro(imu_.gy);
+        float gyroZ  = imu_.calcGyro(imu_.gz);
 
+        Serial.print(readTime_);
+        Serial.print(",");
+        Serial.print(accelX);
+        Serial.print(",");
+        Serial.print(accelY);
+        Serial.print(",");
+        Serial.print(accelZ);
+        Serial.print(",");
+        Serial.print(gyroX);
+        Serial.print(",");
+        Serial.print(gyroY);
+        Serial.print(",");
+        Serial.print(gyroZ);
+        Serial.print(",");
+        // Serial.print(magnetomer_.x);
+        // Serial.print(",");
+        // Serial.print(magnetomer_.y);
+        // Serial.print(",");
+        // Serial.println(magnetomer_.z);
+        Serial.print(magEvent_.magnetic.x);
+        Serial.print(",");
+        Serial.print(magEvent_.magnetic.y);
+        Serial.print(",");
+        Serial.println(magEvent_.magnetic.z);
+        // printIMUData();
+    }
     // // We spent some time writing data and reading sensors so factor that in before next sample
     // delay((settings_.getTimeInterval() * 1000) - (millis() - readTime_));
+    delay(100);
 }
 
 //------------------------------------------------------------------------------

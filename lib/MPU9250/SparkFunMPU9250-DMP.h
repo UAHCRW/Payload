@@ -177,8 +177,7 @@ class MPU9250_DMP
     // Output: INV_SUCCESS (0) on success, otherwise error
     // Note: after a successful update the public sensor variables
     // (e.g. ax, ay, az, gx, gy, gz) will be updated with new data
-    inv_error_t update(unsigned char sensors, inv_error_t& aErr, inv_error_t& gErr, inv_error_t& mErr,
-                       inv_error_t& tErr);
+    inv_error_t update(unsigned char sensors);
 
     // updateAccel, updateGyro, updateCompass, and updateTemperature are
     // called by the update() public method. They read from their respective

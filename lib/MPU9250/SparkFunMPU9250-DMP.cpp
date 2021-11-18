@@ -247,9 +247,12 @@ bool MPU9250_DMP::dataReady()
     return false;
 }
 
-inv_error_t MPU9250_DMP::update(unsigned char sensors, inv_error_t& aErr, inv_error_t& gErr, inv_error_t& mErr,
-                                inv_error_t& tErr)
+inv_error_t MPU9250_DMP::update(unsigned char sensors)
 {
+    inv_error_t aErr = INV_SUCCESS;
+    inv_error_t gErr = INV_SUCCESS;
+    inv_error_t mErr = INV_SUCCESS;
+    inv_error_t tErr = INV_SUCCESS;
     if (sensors & UPDATE_ACCEL) aErr = updateAccel();
     if (sensors & UPDATE_GYRO) gErr = updateGyro();
     if (sensors & UPDATE_COMPASS) mErr = updateCompass();
