@@ -42,7 +42,7 @@ void Settings::scanI2CNetwork()
     if (nDevices == 0)
         Logger::notice("No I2C devices found\n");
     else
-        Logger::notice("done\n");
+        Logger::notice(("I2C Scan complete, found " + String(nDevices) + " devices. \n").c_str());
 }
 
 void Settings::printCrwPayloadSettings()
@@ -152,7 +152,7 @@ bool Settings::initializeIMU(MPU6050* sensor)
 
 bool Settings::initializeMagnetometer(Adafruit_LIS3MDL* sensor, uint8_t pin)
 {
-    if (!sensor->begin_SPI(pin))
+    if (!sensor->begin_I2C())
     {
         Logger::error("Failed to initialize LIS3MDL Magnetometer. Sensor not found on I2C network");
         return magnetometerInitialized_;
@@ -160,7 +160,7 @@ bool Settings::initializeMagnetometer(Adafruit_LIS3MDL* sensor, uint8_t pin)
     magnetometerInitialized_ = true;
 
     Logger::notice("---------------------------------------------------------------------");
-    Logger::notice("                 MPU 6050 IMU Configuration");
+    Logger::notice("                LIS3MDL Magnetometer Configuration");
     Logger::notice("---------------------------------------------------------------------");
     Logger::notice(" * Operation Mode:");
     switch (sensor->getOperationMode())
