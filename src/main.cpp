@@ -141,7 +141,8 @@ void setup()
     settings_.scanI2CNetwork();
     settings_.printCrwPayloadSettings();
 
-    if (!mpu9250_.setup(0x68))
+    mpu9250_.verbose(true);
+    if (!mpu9250_.setup(0x69))
     { // change to your own address
         while (1)
         {
@@ -149,7 +150,6 @@ void setup()
             delay(5000);
         }
     }
-    mpu9250_.verbose(true);
 
     // settings_.initializeIMU(&mpu_);
 
