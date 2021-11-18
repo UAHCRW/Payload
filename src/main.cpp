@@ -141,7 +141,7 @@ void setup()
 
     settings_.initializeIMU(&mpu_);
 
-    // settings_.initializeMagnetometer(&magnetomer_, RAW_MAGNETOMETER_CHIP_SELECT);
+    settings_.initializeMagnetometer(&magnetomer_, RAW_MAGNETOMETER_CHIP_SELECT);
 }
 
 //------------------------------------------------------------------------------
@@ -216,11 +216,16 @@ void loop()
     Serial.print(",");
     Serial.print(mpuNormGyro_.ZAxis);
     Serial.print(",");
-    Serial.print(magnetomer_.x);
+    // Serial.print(magnetomer_.x);
+    // Serial.print(",");
+    // Serial.print(magnetomer_.y);
+    // Serial.print(",");
+    // Serial.println(magnetomer_.z);
+    Serial.print(magEvent_.magnetic.x);
     Serial.print(",");
-    Serial.print(magnetomer_.y);
+    Serial.print(magEvent_.magnetic.y);
     Serial.print(",");
-    Serial.println(magnetomer_.z);
+    Serial.println(magEvent_.magnetic.z);
 
     // We spent some time writing data and reading sensors so factor that in before next sample
     delay((settings_.getTimeInterval() * 1000) - (millis() - readTime_));
