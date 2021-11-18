@@ -12,6 +12,7 @@
         "lib/Logger",
         "lib/Motion_MPU6050",
         "lib/MPU6050",
+        "lib/MPU9250",
         "lib/SdFat/src",
         "lib/SPI",
         "lib/Wire",

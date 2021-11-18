@@ -14,6 +14,7 @@ Date: Fall 2021
 #include "Arduino.h"
 #include "Logger.hpp"
 #include "MPU6050.h"
+#include "MPU9250.h"
 #include "SPI.h"
 #include "SdFat.h"
 #include "settings.hpp"
@@ -56,6 +57,10 @@ const uint8_t SD_CS_PIN = SDCARD_SS_PIN;
 
 Adafruit_LIS3MDL magnetomer_;
 sensors_event_t magEvent_;
+
+#define SPI_CLOCK 4000000 // 8MHz clock works.
+#define SS_PIN    10
+MPU9250 mpu(SPI_CLOCK, SS_PIN);
 
 MPU6050 mpu_;
 Settings settings_;
@@ -107,9 +112,10 @@ void setup()
 {
     Serial.begin(settings_.getBaudRate());
 
-    Wire.setSCL(19);
-    Wire.setSDA(18);
-    Wire.begin();
+    // Wire.setSCL(19);
+    // Wire.setSDA(18);
+    // Wire.begin();
+    SPI.begin();
 
     Logger::setOutputFunction(crwLogger);
     Logger::setLogLevel(settings_.getLoggingLevel());
@@ -135,8 +141,29 @@ void setup()
     Logger::notice("          Dead Reckoning Navigation System (DRNS) Startup");
     Logger::notice("---------------------------------------------------------------------");
     Logger::notice("");
-    settings_.scanI2CNetwork();
+    // settings_.scanI2CNetwork();
     settings_.printCrwPayloadSettings();
+
+    Logger::notice("Here");
+    mpu.init(false, false);
+    Logger::notice("Here1");
+    uint8_t wai = mpu.whoami();
+    if (wai == 0x71) { Serial.println("Successful connection"); }
+    else
+    {
+        Serial.print("Failed connection: ");
+        Serial.println(wai, HEX);
+    }
+
+    uint8_t wai_AK8963 = mpu.AK8963_whoami();
+    if (wai_AK8963 == 0x48) { Serial.println("Successful connection to mag"); }
+    else
+    {
+        Serial.print("Failed connection to mag: ");
+        Serial.println(wai_AK8963, HEX);
+    }
+    mpu.calib_acc();
+    mpu.calib_mag();
 
     settings_.initializeIMU(&mpu_);
 
@@ -203,28 +230,47 @@ void loop()
 #endif
     Serial.print(readTime_);
     Serial.print(",");
-    Serial.print(mpuNormAccel_.XAxis);
-    Serial.print(",");
-    Serial.print(mpuNormAccel_.YAxis);
-    Serial.print(",");
-    Serial.print(mpuNormAccel_.ZAxis);
-    Serial.print(",");
-    Serial.print(mpuNormGyro_.XAxis);
-    Serial.print(",");
-    Serial.print(mpuNormGyro_.YAxis);
-    Serial.print(",");
-    Serial.print(mpuNormGyro_.ZAxis);
-    Serial.print(",");
-    // Serial.print(magnetomer_.x);
+    // Serial.print(mpuNormAccel_.XAxis);
     // Serial.print(",");
-    // Serial.print(magnetomer_.y);
+    // Serial.print(mpuNormAccel_.YAxis);
     // Serial.print(",");
-    // Serial.println(magnetomer_.z);
-    Serial.print(magEvent_.magnetic.x);
-    Serial.print(",");
-    Serial.print(magEvent_.magnetic.y);
-    Serial.print(",");
-    Serial.println(magEvent_.magnetic.z);
+    // Serial.print(mpuNormAccel_.ZAxis);
+    // Serial.print(",");
+    // Serial.print(mpuNormGyro_.XAxis);
+    // Serial.print(",");
+    // Serial.print(mpuNormGyro_.YAxis);
+    // Serial.print(",");
+    // Serial.print(mpuNormGyro_.ZAxis);
+    // Serial.print(",");
+    // // Serial.print(magnetomer_.x);
+    // // Serial.print(",");
+    // // Serial.print(magnetomer_.y);
+    // // Serial.print(",");
+    // // Serial.println(magnetomer_.z);
+    // Serial.print(magEvent_.magnetic.x);
+    // Serial.print(",");
+    // Serial.print(magEvent_.magnetic.y);
+    // Serial.print(",");
+    // Serial.println(magEvent_.magnetic.z);
+    Serial.print(mpu.gyro_data[0]);
+    Serial.print('\t');
+    Serial.print(mpu.gyro_data[1]);
+    Serial.print('\t');
+    Serial.print(mpu.gyro_data[2]);
+    Serial.print('\t');
+    Serial.print(mpu.accel_data[0]);
+    Serial.print('\t');
+    Serial.print(mpu.accel_data[1]);
+    Serial.print('\t');
+    Serial.print(mpu.accel_data[2]);
+    Serial.print('\t');
+    Serial.print(mpu.mag_data[0]);
+    Serial.print('\t');
+    Serial.print(mpu.mag_data[1]);
+    Serial.print('\t');
+    Serial.print(mpu.mag_data[2]);
+    Serial.print('\t');
+    Serial.println(mpu.temperature);
 
     // We spent some time writing data and reading sensors so factor that in before next sample
     delay((settings_.getTimeInterval() * 1000) - (millis() - readTime_));
