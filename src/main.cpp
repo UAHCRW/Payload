@@ -59,7 +59,7 @@ Adafruit_LIS3MDL magnetomer_;
 sensors_event_t magEvent_;
 
 #define SPI_CLOCK 4000000 // 8MHz clock works.
-#define SS_PIN    10
+#define SS_PIN    8
 MPU9250 mpu(SPI_CLOCK, SS_PIN);
 
 MPU6050 mpu_;

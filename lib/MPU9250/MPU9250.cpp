@@ -112,6 +112,7 @@ bool MPU9250::init(bool calib_gyro, bool calib_acc)
     for (i = 0; i < MPU_InitRegNum; i++)
     {
         Serial.println("Help11");
+        Serial.println(MPU_Init_Data[i][1]);
         WriteReg(MPU_Init_Data[i][1], MPU_Init_Data[i][0]);
         delayMicroseconds(1000); // I2C must slow down the write speed, otherwise it won't work
     }
