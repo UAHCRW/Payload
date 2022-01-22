@@ -157,7 +157,7 @@ void loop()
     {
         mpuRawAccel_ = mpu_.readRawAccel();
         // mpuNormAccel_ = mpu_.readScaledAccel();
-        mpuNormAccel_      = mpu_.readNormalizeAccel();
+        mpuNormAccel_      = mpu_.readScaledAccel();
         mpuRawGyro_        = mpu_.readRawGyro();
         mpuNormGyro_       = mpu_.readNormalizeGyro();
         mpu6050Activities_ = mpu_.readActivites();
