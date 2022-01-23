@@ -49,9 +49,13 @@ class Settings final
     /// \returns true if connected otherwise false
     bool isMagnetometerInitialized() { return magnetometerInitialized_; }
 
-    /// \brief The time interval between sensor samples (1/sampling freq)
-    /// \returns time interval
-    float getTimeInterval() { return timeInterval_; }
+    /// \brief The time interval between sensor samples in seconds (1/sampling freq)
+    /// \returns time interval in seconds
+    float getTimeIntervalSeconds() { return timeInterval_; }
+
+    /// \brief Gets the time interval between sensor samples in milliseconds (1/sampling freq) * 1000
+    /// \returns time interval in milliseconds
+    float getTimeIntervalMilliSeconds() { return (timeInterval_ * 1000); }
 
     /// \brief Returns the name of the trajectory file
     String getTrajectoryFilename() { return trajectoryFileName_; }

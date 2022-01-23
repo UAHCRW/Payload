@@ -4,6 +4,7 @@ BasedOnStyle: Microsoft
 
 IndentWidth: 4
 TabWidth: 0
+ContinuationIndentWidth: 0
 AccessModifierOffset: 0
 ColumnLimit: 120
 UseTab: Never
@@ -29,14 +30,17 @@ NamespaceIndentation: All
 FixNamespaceComments: false
 
 IndentPPDirectives: AfterHash
-
+IndentAccessModifiers: false
+IndentGotoLabels: false
 CompactNamespaces: true
 
-BreakBeforeBraces: Custom
+BreakBeforeBraces: Custom 
 BraceWrapping:
   AfterStruct: true
   AfterClass: true
   AfterControlStatement: true
+  # AfterControlStatement: MultiLine
+  IndentBraces: false
   AfterNamespace: true
   AfterFunction: true
   AfterUnion: true
