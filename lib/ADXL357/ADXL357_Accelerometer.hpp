@@ -14,6 +14,7 @@
 #define RANGE_SCALE_FACTOR_20 39    // micro g / LSB
 #define RANGE_SCALE_FACTOR_10 19.5  // micro g / LSB
 #define TEMP_SCALE_FACTOR     -9.05 // LSB / deg C
+#define MAX_FIFO_SAMPLES      96
 namespace ADXL357
 {
     // General Register Values
@@ -215,12 +216,20 @@ namespace ADXL357
         /// \brief Prints the sensor configuration similiar to the format found in settings.cpp
         void printSensorConfiguration();
 
-        // API to configure sensor
-        ////////////////////////////////////////////////////////////
-
-        void configSensor(AccelerometerConfig& config);
-
+        /// \brief Get the configuration of the accelerometer by reading registers
         AccelerometerConfig getAccelerometerConfig();
+
+        /// \brief Reads status register to determine if there are valid FIFO samples in the FIFO buffer
+        bool isDataReady();
+
+        /// \brief Reads staus register to determine if the fifo is full
+        bool isFifoFull();
+
+        /// \brief Reads status register to determine if the fifo has overflowed
+        bool hasFifoOverrun();
+
+        /// \brief Gets the number of samples contained in the FIFO buffer
+        uint8_t numValidFifoSamples();
 
         private:
         void select();

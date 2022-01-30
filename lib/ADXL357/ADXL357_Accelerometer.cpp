@@ -29,6 +29,7 @@ namespace ADXL357
         setI2CInterruptRangeReg(config_.i2cSpeed, config_.interruptPolarity, config_.sensorRange);
         setFilterSettings(config_.odrLpfSetting, config_.hpfSetting);
         setPwrControlReg(false, false, false);
+        setFifoSamples(MAX_FIFO_SAMPLES);
 
         Logger::notice("ADXL357 has been turned on for measurement reporting");
 
@@ -151,73 +152,115 @@ namespace ADXL357
     }
 
     // -----------------------------------------------------------------------------------------------------------------
-    // void Accelerometer::printSensorConfiguration()
-    // {
-    //     // AccelerometerConfig config = getAccelerometerConfig();
-    //     // Logger::notice("---------------------------------------------------------------------");
-    //     // Logger::notice("                ADXL357 Accelerometer Configuration");
-    //     // Logger::notice("---------------------------------------------------------------------");
-    //     // Logger::notice(" * Data Rate [Hz] Low Pass Filter [Hz]:");
+    void Accelerometer::printSensorConfiguration()
+    {
+        AccelerometerConfig config = getAccelerometerConfig();
+        Logger::notice("---------------------------------------------------------------------");
+        Logger::notice("                ADXL357 Accelerometer Configuration");
+        Logger::notice("---------------------------------------------------------------------");
+        Logger::notice(" * Data Rate [Hz] Low Pass Filter [Hz]:");
 
-    //     // switch (config.odrLpfSetting)
-    //     // {
-    //     //     case ODR_LPF::ODR_4000_LP_1000: Logger::notice("\t4000 Hz and 1000 Hz\n"); break;
-    //     //     case ODR_LPF::ODR_2000_LP_500: Logger::notice("\t2000 Hz and 500 Hz\n"); break;
-    //     //     case ODR_LPF::ODR_1000_LP_250: Logger::notice("\t1000 Hz and 250 Hz\n"); break;
-    //     //     case ODR_LPF::ODR_500_LP_125: Logger::notice("\t500 Hz and 125 Hz\n"); break;
-    //     //     case ODR_LPF::ODR_250_LP_62_5: Logger::notice("\t250 Hz and 62.5 Hz\n"); break;
-    //     //     case ODR_LPF::ODR_125_LP_31_25: Logger::notice("\t125 Hz and 31.25 Hz\n"); break;
-    //     //     case ODR_LPF::ODR_62_5_LP_15_625: Logger::notice("\t62.5 Hz and 15.625 Hz\n"); break;
-    //     //     case ODR_LPF::ODR_31_25_LP_7_813: Logger::notice("\t31.25 Hz and 7.813 Hz\n"); break;
-    //     //     case ODR_LPF::ODR_15_625_LP_3_906: Logger::notice("\t15.625 Hz and 3.906 Hz\n"); break;
-    //     //     case ODR_LPF::ODR_7_813_LP_1_953: Logger::notice("\t7.813 Hz and 1.953 Hz\n"); break;
-    //     //     case ODR_LPF::ODR_3_906_LP_0_977: Logger::notice("\t3.906 Hz and 0.977 Hz\n"); break;
-    //     //     default: Logger::warning("\tCannot be determined."); break;
-    //     // }
+        switch (config.odrLpfSetting)
+        {
+            case ODR_LPF::ODR_4000_LP_1000: Logger::notice("\t4000 Hz and 1000 Hz\n"); break;
+            case ODR_LPF::ODR_2000_LP_500: Logger::notice("\t2000 Hz and 500 Hz\n"); break;
+            case ODR_LPF::ODR_1000_LP_250: Logger::notice("\t1000 Hz and 250 Hz\n"); break;
+            case ODR_LPF::ODR_500_LP_125: Logger::notice("\t500 Hz and 125 Hz\n"); break;
+            case ODR_LPF::ODR_250_LP_62_5: Logger::notice("\t250 Hz and 62.5 Hz\n"); break;
+            case ODR_LPF::ODR_125_LP_31_25: Logger::notice("\t125 Hz and 31.25 Hz\n"); break;
+            case ODR_LPF::ODR_62_5_LP_15_625: Logger::notice("\t62.5 Hz and 15.625 Hz\n"); break;
+            case ODR_LPF::ODR_31_25_LP_7_813: Logger::notice("\t31.25 Hz and 7.813 Hz\n"); break;
+            case ODR_LPF::ODR_15_625_LP_3_906: Logger::notice("\t15.625 Hz and 3.906 Hz\n"); break;
+            case ODR_LPF::ODR_7_813_LP_1_953: Logger::notice("\t7.813 Hz and 1.953 Hz\n"); break;
+            case ODR_LPF::ODR_3_906_LP_0_977: Logger::notice("\t3.906 Hz and 0.977 Hz\n"); break;
+            default: Logger::warning("\tCannot be determined."); break;
+        }
 
-    //     // Logger::notice(" * High Pass Filter [Hz]");
-    //     // switch (config.hpfSetting)
-    //     // {
-    //     //     case HIGH_PASS_FILTER::HP_24_7: Logger::notice("\t24.7 x 10^-4 X ODR\n"); break;
-    //     //     case HIGH_PASS_FILTER::HP_6_2084: Logger::notice("\t6.2084 x 10^-4 X ODR\n"); break;
-    //     //     case HIGH_PASS_FILTER::HP_1_5545: Logger::notice("\t1.5545 x 10^-4 X ODR\n"); break;
-    //     //     case HIGH_PASS_FILTER::HP_3862: Logger::notice("\t0.3862 x 10^-4 X ODR\n"); break;
-    //     //     case HIGH_PASS_FILTER::HP_0954: Logger::notice("\t0.0954 x 10^-4 X ODR\n"); break;
-    //     //     case HIGH_PASS_FILTER::HP_0238: Logger::notice("\t0.0238 x 10^-4 X ODR\n"); break;
-    //     //     default: Logger::warning("\tCannot be determined."); break;
-    //     // }
+        Logger::notice(" * High Pass Filter [Hz]");
+        switch (config.hpfSetting)
+        {
+            case HIGH_PASS_FILTER::HP_24_7: Logger::notice("\t24.7 x 10^-4 X ODR\n"); break;
+            case HIGH_PASS_FILTER::HP_6_2084: Logger::notice("\t6.2084 x 10^-4 X ODR\n"); break;
+            case HIGH_PASS_FILTER::HP_1_5545: Logger::notice("\t1.5545 x 10^-4 X ODR\n"); break;
+            case HIGH_PASS_FILTER::HP_3862: Logger::notice("\t0.3862 x 10^-4 X ODR\n"); break;
+            case HIGH_PASS_FILTER::HP_0954: Logger::notice("\t0.0954 x 10^-4 X ODR\n"); break;
+            case HIGH_PASS_FILTER::HP_0238: Logger::notice("\t0.0238 x 10^-4 X ODR\n"); break;
+            default: Logger::warning("\tCannot be determined."); break;
+        }
 
-    //     // Logger::notice(" * I2C Speed");
-    //     // switch (config.i2cSpeed)
-    //     // {
-    //     //     case I2CSpeed::HIGH_SPEED: Logger::notice("\tHigh Speed\n"); break;
-    //     //     case I2CSpeed::LOW_SPEED: Logger::notice("\tLow Speed\n"); break;
-    //     //     default: Logger::warning("\tCannot be determined\n"); break;
-    //     // }
+        Logger::notice(" * I2C Speed");
+        switch (config.i2cSpeed)
+        {
+            case I2CSpeed::HIGH_SPEED: Logger::notice("\tHigh Speed\n"); break;
+            case I2CSpeed::LOW_SPEED: Logger::notice("\tLow Speed\n"); break;
+            default: Logger::warning("\tCannot be determined\n"); break;
+        }
 
-    //     // Logger::notice(" * Interrupt Polarity");
-    //     // switch (config.interruptPolarity)
-    //     // {
-    //     //     case InterruptPolarity::ACTIVE_HIGH: Logger::notice("\tActive High\n"); break;
-    //     //     case InterruptPolarity::ACTIVE_LOW: Logger::notice("\tActive Low\n"); break;
-    //     //     default: Logger::warning("\tCannot be determined\n"); break;
-    //     // }
+        Logger::notice(" * Interrupt Polarity");
+        switch (config.interruptPolarity)
+        {
+            case InterruptPolarity::ACTIVE_HIGH: Logger::notice("\tActive High\n"); break;
+            case InterruptPolarity::ACTIVE_LOW: Logger::notice("\tActive Low\n"); break;
+            default: Logger::warning("\tCannot be determined\n"); break;
+        }
 
-    //     // Logger::notice(" * Sensor Range");
-    //     // switch (config.sensorRange)
-    //     // {
-    //     //     case AccelRange::TEN: Logger::notice("\t10 g\n"); break;
-    //     //     case AccelRange::TWENTY: Logger::notice("\t20 g\n"); break;
-    //     //     case AccelRange::FORTY: Logger::notice("\t40 g\n"); break;
-    //     //     default: Logger::warning("\tCannot be determined\n"); break;
-    //     // }
+        Logger::notice(" * Sensor Range");
+        switch (config.sensorRange)
+        {
+            case AccelRange::TEN: Logger::notice("\t10 g\n"); break;
+            case AccelRange::TWENTY: Logger::notice("\t20 g\n"); break;
+            case AccelRange::FORTY: Logger::notice("\t40 g\n"); break;
+            default: Logger::warning("\tCannot be determined\n"); break;
+        }
 
-    //     // Logger::notice(" * Initial Accelerometer Bias");
-    //     // Logger::notice(("\t X [m/s^2]: " + String(config_.sensorBias.x)).c_str());
-    //     // Logger::notice(("\t Y [m/s^2]: " + String(config_.sensorBias.y)).c_str());
-    //     // Logger::notice(("\t Z [m/s^2]: " + String(config_.sensorBias.z) + "\n").c_str());
-    //     // Logger::notice("---------------------------------------------------------------------\n");
-    // }
+        Logger::notice(" * Initial Accelerometer Bias");
+        Logger::notice(("\t X [m/s^2]: " + String(config_.sensorBias.x)).c_str());
+        Logger::notice(("\t Y [m/s^2]: " + String(config_.sensorBias.y)).c_str());
+        Logger::notice(("\t Z [m/s^2]: " + String(config_.sensorBias.z) + "\n").c_str());
+        Logger::notice("---------------------------------------------------------------------\n");
+    }
+
+    // -----------------------------------------------------------------------------------------------------------------
+    AccelerometerConfig Accelerometer::getAccelerometerConfig()
+    {
+        AccelerometerConfig config;
+        getI2CInterruptRangeReg(config.i2cSpeed, config.interruptPolarity, config.sensorRange);
+        config.sensorBias = getAccelerometerBias();
+        getFilterSettings(config.odrLpfSetting, config.hpfSetting);
+        return config;
+    }
+
+    // -----------------------------------------------------------------------------------------------------------------
+    bool Accelerometer::isDataReady()
+    {
+        bool nvmBusy{false}, activity{false}, fifoOverrun{true}, fifoFull{true}, dataRdy{false};
+        getStatus(nvmBusy, activity, fifoOverrun, fifoFull, dataRdy);
+        return dataRdy;
+    }
+
+    // -----------------------------------------------------------------------------------------------------------------
+    bool Accelerometer::isFifoFull()
+    {
+        bool nvmBusy{false}, activity{false}, fifoOverrun{true}, fifoFull{true}, dataRdy{false};
+        getStatus(nvmBusy, activity, fifoOverrun, fifoFull, dataRdy);
+        return fifoFull;
+    }
+
+    // -----------------------------------------------------------------------------------------------------------------
+    bool Accelerometer::hasFifoOverrun()
+    {
+        bool nvmBusy{false}, activity{false}, fifoOverrun{true}, fifoFull{true}, dataRdy{false};
+        getStatus(nvmBusy, activity, fifoOverrun, fifoFull, dataRdy);
+        return fifoOverrun;
+    }
+
+    // -----------------------------------------------------------------------------------------------------------------
+    uint8_t Accelerometer::numValidFifoSamples()
+    {
+        uint8_t samps{0};
+        readSingleRegister(REGISTER::FIFO_SAMPLES, samps);
+        return samps;
+    }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Private
