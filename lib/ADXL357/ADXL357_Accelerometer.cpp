@@ -19,7 +19,7 @@ namespace ADXL357
 
         // These registers never change. If these values dont match something is wrong
         if ((getAnalogDevicesID() != ANALOG_DEV_ID) || (getAnalogDevicesMemsID() != DEV_MEMS_ID) ||
-            (getDeviceId() != DEV_ID))
+            (getDeviceId() != DEVICE_ID))
         {
             Logger::error("One of all of the Analog Device ID, Analog MEMS ID, or Device ID didn't match ICD for the "
                           "ADXL357 Accelerometer");
@@ -280,14 +280,14 @@ namespace ADXL357
     }
 
     // -----------------------------------------------------------------------------------------------------------------
-    double Accelerometer::readAccelerationReg(uint8_t reg)
+    double Accelerometer::readAccelerationReg(REGISTER reg)
     {
         uint32_t rawRegVal = readRawAccelerationReg(reg);
         return convertReadingScaledToUnscaled(rawRegVal);
     }
 
     // -----------------------------------------------------------------------------------------------------------------
-    uint32_t Accelerometer::readRawAccelerationReg(uint8_t reg)
+    uint32_t Accelerometer::readRawAccelerationReg(REGISTER reg)
     {
         uint8_t buff[3]{0};
         readRegisters(reg, buff, 3);

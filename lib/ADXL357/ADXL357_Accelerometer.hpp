@@ -15,10 +15,11 @@
 #define RANGE_SCALE_FACTOR_10 19.5  // micro g / LSB
 #define TEMP_SCALE_FACTOR     -9.05 // LSB / deg C
 #define MAX_FIFO_SAMPLES      96
+#define ADXL357_RESET_CODE    0X52
 namespace ADXL357
 {
     // General Register Values
-    enum REGISTER : uint16_t
+    enum class REGISTER : uint16_t
     {
         DEV_ID_AD    = 0x00,
         DEV_ID_MEM   = 0X01,
@@ -61,7 +62,7 @@ namespace ADXL357
     // Register Values for High pass filter
     // These values are multiplied by the output data rate (ODR)
     // Format for 1.5545x10^-4 X ODR -> HP_1_5545 where _ represents a decimal
-    enum HIGH_PASS_FILTER : uint16_t
+    enum class HIGH_PASS_FILTER : uint16_t
     {
         NO_FILTER = 0x00,
         HP_24_7   = 0x01,
@@ -74,7 +75,7 @@ namespace ADXL357
 
     // Output Data Rate (ODR) -> Low Pass Filter (LP) "_" in a number represents a decimal
     // All values in Hz
-    enum ODR_LPF : uint16_t
+    enum class ODR_LPF : uint16_t
     {
         ODR_4000_LP_1000    = 0x00,
         ODR_2000_LP_500     = 0x01,
@@ -89,26 +90,20 @@ namespace ADXL357
         ODR_3_906_LP_0_977  = 0x0A,
     };
 
-    // MISC
-    enum MISC : uint8_t
-    {
-        RESET_CODE = 0X52,
-    };
-
-    enum I2CSpeed : uint8_t
+    enum class I2CSpeed : uint8_t
     {
         LOW_SPEED  = 0,
         HIGH_SPEED = 1,
     };
 
-    enum AccelRange : uint8_t
+    enum class AccelRange : uint8_t
     {
         TEN    = 0x1,
         TWENTY = 0x2,
         FORTY  = 0x3,
     };
 
-    enum InterruptPolarity : uint8_t
+    enum class InterruptPolarity : uint8_t
     {
         ACTIVE_LOW  = 0,
         ACTIVE_HIGH = 1,
@@ -199,7 +194,7 @@ namespace ADXL357
         AccelerometerData getAccelerometerBias();
 
         /// \brief Resets the accelerometer
-        void reset() { writeSingleRegister(REGISTER::RESET, MISC::RESET_CODE); }
+        void reset() { writeSingleRegister(REGISTER::RESET, ADXL357_RESET_CODE); }
 
         /// \brief Gets the Analog devices ID
         uint8_t getAnalogDevicesID();
@@ -234,18 +229,22 @@ namespace ADXL357
         private:
         void select();
         void deselect();
-        uint32_t readRawAccelerationReg(uint8_t reg);
-        double readAccelerationReg(uint8_t reg);
+        uint32_t readRawAccelerationReg(REGISTER reg);
+        double readAccelerationReg(REGISTER reg);
 
         // Read Registers
         /////////////////////////////////////////////
         void readRegisters(uint8_t reg, uint8_t* buffer, uint8_t bytes);
+        void readRegisters(REGISTER reg, uint8_t* buff, uint8_t bytes) { readRegisters((uint8_t)(reg), buff, bytes); }
         void readSingleRegister(uint8_t reg, uint8_t& data);
+        void readSingleRegister(REGISTER reg, uint8_t& data) { readSingleRegister((uint8_t)(reg), data); }
 
         // Write Registers
         /////////////////////////////////////////////
         void writeRegisters(uint8_t reg, uint8_t* buffer, uint8_t bytes);
+        void writeRegisters(REGISTER reg, uint8_t* buff, uint8_t bytes) { writeRegisters((uint8_t)(reg), buff, bytes); }
         void writeSingleRegister(uint8_t reg, uint8_t value);
+        void writeSingleRegister(REGISTER reg, uint8_t data) { writeSingleRegister((uint8_t)(reg), data); }
 
         // Configure Accelerometer
         /////////////////////////////////////////////
