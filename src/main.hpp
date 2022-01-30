@@ -8,7 +8,7 @@ Sensors:
 Author: Charger Rocket Works 2021/2022 Team
 Date: Fall 2021
 */
-#include "ADXL356_Accelerometer.hpp"
+#include "ADXL357_Accelerometer.hpp"
 #include "Adafruit_LIS3MDL.h"
 #include "Adafruit_Sensor.h"
 #include "Arduino.h"

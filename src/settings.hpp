@@ -1,6 +1,7 @@
 #ifndef SETTINGS_HPP
 #define SETTINGS_HPP
 
+#include "ADXL357_Accelerometer.hpp"
 #include "Adafruit_LIS3MDL.h"
 #include "Arduino.h"
 #include "MPU6050.h"
@@ -21,7 +22,7 @@ class Settings final
     bool initializeIMU(MPU6050* sensor);
 
     /// \brief Initializes and prints settings for the ADXL357 -- not implemented
-    bool initializeCrwAccelerometer() { return false; }
+    bool initializeCrwAccelerometer(ADXL357::Accelerometer* accelerometer);
 
     /// \brief Initializes the Gyroscope and prints settings
     bool initiailzeCrwGyroscope() { return false; }

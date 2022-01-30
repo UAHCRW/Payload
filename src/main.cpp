@@ -32,7 +32,7 @@ void setup()
     openFile(trajectoryFile_, settings_.getTrajectoryFilename().c_str());
     openFile(loggingFile_, settings_.getLoggingFilename().c_str());
 #else
-    Logger::notice("Teensy 4.1 Software was built without SD Card. File will not be written.")
+    Logger::notice("CRW DRNS Software was built without SD Card. Files will not be written.")
 #endif
 
     Logger::notice("---------------------------------------------------------------------");

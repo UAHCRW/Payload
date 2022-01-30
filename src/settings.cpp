@@ -205,3 +205,14 @@ bool Settings::initializeMagnetometer(Adafruit_LIS3MDL* sensor, uint8_t pin)
 
     return magnetometerInitialized_;
 }
+
+bool Settings::initializeCrwAccelerometer(ADXL357::Accelerometer* accelerometer)
+{
+    if (!accelerometer->begin())
+    {
+        Logger::error("Could not configure ADXL357 Accelerometer");
+        return false;
+    }
+    accelerometer->printSensorConfiguration();
+    return true;
+}
