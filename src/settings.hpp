@@ -4,6 +4,7 @@
 #include "ADXL357_Accelerometer.hpp"
 #include "Adafruit_LIS3MDL.h"
 #include "Arduino.h"
+#include "IAM_20380.hpp"
 #include "MPU6050.h"
 #include "logger.hpp"
 #include <stdint.h>
@@ -25,7 +26,7 @@ class Settings final
     bool initializeCrwAccelerometer(ADXL357::Accelerometer* accelerometer);
 
     /// \brief Initializes the Gyroscope and prints settings
-    bool initiailzeCrwGyroscope() { return false; }
+    bool initiailzeCrwGyroscope(IAM20380::Gyroscope* gyro);
 
     /// \brief INitializes magnetometer and prints settings
     /// \param sensor A pointer to a magnetometer sensor object

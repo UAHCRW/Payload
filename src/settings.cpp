@@ -216,3 +216,15 @@ bool Settings::initializeCrwAccelerometer(ADXL357::Accelerometer* accelerometer)
     accelerometer->printSensorConfiguration();
     return true;
 }
+
+bool Settings::initiailzeCrwGyroscope(IAM20380::Gyroscope* gyro)
+{
+    if (!gyro->begin())
+    {
+        Logger::error("Could not configure IAM-20380 Gyroscope");
+        return false;
+    }
+
+    gyro->printGryoConfiguration();
+    return true;
+}
