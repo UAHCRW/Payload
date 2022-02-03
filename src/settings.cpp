@@ -205,3 +205,26 @@ bool Settings::initializeMagnetometer(Adafruit_LIS3MDL* sensor, uint8_t pin)
 
     return magnetometerInitialized_;
 }
+
+bool Settings::initializeCrwAccelerometer(ADXL357::Accelerometer* accelerometer)
+{
+    if (!accelerometer->begin())
+    {
+        Logger::error("Could not configure ADXL357 Accelerometer");
+        return false;
+    }
+    accelerometer->printSensorConfiguration();
+    return true;
+}
+
+bool Settings::initiailzeCrwGyroscope(IAM20380::Gyroscope* gyro)
+{
+    if (!gyro->begin())
+    {
+        Logger::error("Could not configure IAM-20380 Gyroscope");
+        return false;
+    }
+
+    gyro->printGryoConfiguration();
+    return true;
+}

@@ -1,14 +1,13 @@
 /*
 Retrieves sensor data and writes to a csv file on the sd card
 Sensors:
-  Magnetometer x1
   Accelerometer x3
   Gyroscope x3
 
 Author: Charger Rocket Works 2021/2022 Team
 Date: Fall 2021
 */
-#include "ADXL356_Accelerometer.hpp"
+#include "ADXL357_Accelerometer.hpp"
 #include "Adafruit_LIS3MDL.h"
 #include "Adafruit_Sensor.h"
 #include "Arduino.h"
@@ -52,25 +51,11 @@ const uint8_t SD_CS_PIN = SDCARD_SS_PIN;
 // Program Configuration & Definitions (Pins, Sensors, Constants, Functions)
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-#define RAW_MAGNETOMETER_CHIP_SELECT 12
-
-Adafruit_LIS3MDL magnetomer_;
-sensors_event_t magEvent_;
-
-MPU6050 mpu_;
 Settings settings_;
-float readTime_ = 0;
-float roll_     = 0;
-float pitch_    = 0;
-float yaw_      = 0;
-
+uint32_t readTime_{0};
 SdFs sd;
 FsFile trajectoryFile_;
 FsFile loggingFile_;
-
-Vector mpuNormAccel_;
-Vector mpuNormGyro_;
-Activites mpu6050Activities_;
 
 // Functions
 /// \brief Opens a file system
@@ -88,9 +73,6 @@ void crwLogger(Logger::Level level, const char* module, const char* message);
 /// \brief Writes data to a csv file
 /// \param file Sd Card file object
 /// \param data data to write to the file
-void writeDataToCsv(FsFile& file, Vector& data, bool endLine = false);
 void writeDataToCsv(FsFile& file, int16_t& data, bool endLine = false);
 void writeDataToCsv(FsFile& file, float& data, bool endLine = false);
 void writeDataToCsv(FsFile& file, double& data, bool endLine = false);
-void writeDataToCsv(FsFile& file, Activites& data, bool endLine = false);
-void writeDataToCsv(FsFile& file, sensors_event_t& data, bool endLine = false);

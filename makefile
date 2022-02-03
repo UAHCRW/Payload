@@ -21,7 +21,7 @@ LIBS_SHARED_BASE := C:\Users\Newton\Documents\Arduino\libraries
 LIBS_SHARED      := 
 
 LIBS_LOCAL_BASE  := lib
-LIBS_LOCAL       := SdFat SPI Wire Adafruit_Unified_Sensor Adafruit_BusIO MPU6050 Logger ADXL357 LIS3MDL
+LIBS_LOCAL       := SdFat SPI Wire Adafruit_Unified_Sensor Adafruit_BusIO MPU6050 Logger ADXL357 LIS3MDL IAM-20380
 
 CORE_BASE        := C:\PROGRA~2\Arduino\hardware\teensy\avr\cores\teensy4
 GCC_BASE         := C:\PROGRA~2\Arduino\hardware\tools\arm\bin
@@ -43,7 +43,7 @@ FLAGS_LD    := -Wl,--print-memory-usage,--gc-sections,--relax -T$(CORE_BASE)/imx
 
 LIBS        := -larm_cortexM7lfsp_math -lm -lstdc++
 
-DEFINES     := -D__IMXRT1062__ -DTEENSYDUINO=155 -DARDUINO_TEENSY41 -DARDUINO=10813 -DTEENSY_BUILD -DUSE_SD_CARD
+DEFINES     := -D__IMXRT1062__ -DTEENSYDUINO=155 -DARDUINO_TEENSY41 -DARDUINO=10813 -DTEENSY_BUILD -DUSE_SD_CARD 
 DEFINES     += -DF_CPU=600000000 -DUSB_SERIAL -DLAYOUT_US_ENGLISH
 
 CPP_FLAGS   := $(FLAGS_CPU) $(FLAGS_OPT) $(FLAGS_COM) $(DEFINES) $(FLAGS_CPP)
