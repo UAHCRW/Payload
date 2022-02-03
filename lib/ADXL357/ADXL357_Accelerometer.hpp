@@ -288,10 +288,10 @@ namespace ADXL357
         // Misc
         /////////////////////////////////////////////
         /// \brief Converts a value from the register in units LSB to a useable reading in G
-        double convertReadingScaledToUnscaled(uint32_t reading);
+        double converReadingRawToUseable(uint32_t reading);
 
         /// \brief Converts a value in G to a value for the register in units LSB
-        uint32_t convertReadingUnscaledToScaled(double reading);
+        uint32_t converReadingUseableToRaw(double reading);
 
         // Members
         /////////////////////////////////////////////

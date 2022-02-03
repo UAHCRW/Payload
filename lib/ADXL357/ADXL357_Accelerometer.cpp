@@ -105,17 +105,17 @@ namespace ADXL357
         uint16_t val{0};
         readRegisters(REGISTER::OFFSET_X_H, buff, 2);
         for (int ii = 1; ii >= 0; ii--) { val |= buff[ii] << ((ii > 0) ? 8 : 0); }
-        data.x = convertReadingScaledToUnscaled(val);
+        data.x = converReadingRawToUseable(val);
 
         val = 0;
         readRegisters(REGISTER::OFFSET_Y_H, buff, 2);
         for (int ii = 1; ii >= 0; ii--) { val |= buff[ii] << ((ii > 0) ? 8 : 0); }
-        data.y = convertReadingScaledToUnscaled(val);
+        data.y = converReadingRawToUseable(val);
 
         val = 0;
         readRegisters(REGISTER::OFFSET_Z_H, buff, 2);
         for (int ii = 1; ii >= 0; ii--) { val |= buff[ii] << ((ii > 0) ? 8 : 0); }
-        data.z = convertReadingScaledToUnscaled(val);
+        data.z = converReadingRawToUseable(val);
         return data;
     }
 
@@ -283,7 +283,7 @@ namespace ADXL357
     double Accelerometer::readAccelerationReg(REGISTER reg)
     {
         uint32_t rawRegVal = readRawAccelerationReg(reg);
-        return convertReadingScaledToUnscaled(rawRegVal);
+        return converReadingRawToUseable(rawRegVal);
     }
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -344,13 +344,15 @@ namespace ADXL357
     }
 
     // -----------------------------------------------------------------------------------------------------------------
-    double Accelerometer::convertReadingScaledToUnscaled(uint32_t reading)
+    double Accelerometer::converReadingRawToUseable(uint32_t reading)
     {
-        return ((double)(((int32_t)(reading)) * rangeScaleFactor_ / 1e-6));
+        // Handle two's compliment
+        int32_t newVal = ((int32_t)(reading << 4)) >> 4;
+        return ((double)(newVal)) * rangeScaleFactor_ / 1e-6;
     }
 
     // -----------------------------------------------------------------------------------------------------------------
-    uint32_t Accelerometer::convertReadingUnscaledToScaled(double reading)
+    uint32_t Accelerometer::converReadingUseableToRaw(double reading)
     {
         return ((uint32_t)(reading / rangeScaleFactor_ * 1e-6));
     }
@@ -442,12 +444,12 @@ namespace ADXL357
 
         uint32_t xRaw = 0, yRaw = 0, zRaw = 0;
         for (int ii = 2; ii >= 0; ii--) { xRaw |= (buff[ii] << (ii > 0) ? (8 * ii - 4) : 0); }
-        for (int ii = 2; ii >= 0; ii--) { xRaw |= (buff[ii + 3] << (ii > 0) ? (8 * ii - 4) : 0); }
-        for (int ii = 2; ii >= 0; ii--) { xRaw |= (buff[ii + 6] << (ii > 0) ? (8 * ii - 4) : 0); }
+        for (int ii = 2; ii >= 0; ii--) { yRaw |= (buff[ii + 3] << (ii > 0) ? (8 * ii - 4) : 0); }
+        for (int ii = 2; ii >= 0; ii--) { zRaw |= (buff[ii + 6] << (ii > 0) ? (8 * ii - 4) : 0); }
 
-        x = convertReadingScaledToUnscaled(xRaw);
-        y = convertReadingScaledToUnscaled(yRaw);
-        z = convertReadingScaledToUnscaled(zRaw);
+        x = converReadingRawToUseable(xRaw);
+        y = converReadingRawToUseable(yRaw);
+        z = converReadingRawToUseable(zRaw);
     }
 
     // -----------------------------------------------------------------------------------------------------------------
