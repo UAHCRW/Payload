@@ -17,6 +17,10 @@ void setup()
     Logger::setLogLevel(settings_.getLoggingLevel());
 
     pinMode(LED_BUILTIN, OUTPUT);
+    pinMode(BEAGLE_BONE_PULSE_PIN, INPUT_PULLUP);
+    pinMode(ACCELEROMETER_CHIP_SELECT, OUTPUT);
+    pinMode(GYRO_CHIP_SELECT, OUTPUT);
+    attachInterrupt(digitalPinToInterrupt(BEAGLE_BONE_PULSE_PIN), isrRoutine, CHANGE);
 
 #ifdef USE_SD_CARD
     // Initialize the SD.
@@ -41,6 +45,23 @@ void setup()
     Logger::notice("");
     settings_.scanI2CNetwork();
     settings_.printCrwPayloadSettings();
+
+    acceleromter_ = ADXL357::Accelerometer(ACCELEROMETER_CHIP_SELECT, CRW_SPI_CLOCK_SPEED, accelConfig_);
+    gyro_         = IAM20380::Gyroscope(GYRO_CHIP_SELECT, CRW_SPI_CLOCK_SPEED, gyroConfig_);
+
+    bool initialized{false};
+
+    initialized &= settings_.initializeCrwAccelerometer(&acceleromter_);
+    initialized &= settings_.initiailzeCrwGyroscope(&gyro_);
+
+    if (!initialized)
+    {
+        for (;;)
+        {
+            Logger::error("Initialization Failed");
+            delay(1);
+        }
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -50,29 +71,31 @@ void setup()
 //------------------------------------------------------------------------------
 void loop()
 {
-    readTime_ = millis();
-
-#ifdef USE_SD_CARD
-
-    trajectoryFile_.flush();
+    if (isrTriggered)
+    {
+        acceleromter_.getStateFromFifoLastDataSample(accelData_);
+        gyro_.getStateFromLastFifoSample(gyroData_);
+#if defined(LOG_TO_FILE) && defined(USE_SD_CARD)
+        writeDataToCsv(accelData_);
+        writeDataToCsv(gyroData_, true);
+        trajectoryFile_.flush();
 #endif
 
-    // We spent some time writing data and reading sensors so factor that in before next sample
-    float timeUsed  = millis() - readTime_;
-    float delayTime = settings_.getTimeIntervalMilliSeconds() - timeUsed;
-
-    // Check to see if we missed a sample
-    if (timeUsed > settings_.getTimeIntervalMilliSeconds())
-    {
-        int numSamplesMissed = (int)(timeUsed / 1000);
-        String msg("Missed " + String(numSamplesMissed) + " samples. Time since read " + String(timeUsed) +
-                   ". Time Interval " + String(numSamplesMissed));
-        Logger::error(msg.c_str());
-        delayTime = settings_.getTimeIntervalMilliSeconds() - fmod(timeUsed, settings_.getTimeIntervalMilliSeconds());
-        Logger::notice(("Setting Delay for next sample to " + String(delayTime) + ".").c_str());
+#ifdef LOG_TO_SERIAL
+        Serial.print(accelData_.x);
+        Serial.print(",");
+        Serial.print(accelData_.y);
+        Serial.print(",");
+        Serial.print(accelData_.z);
+        Serial.print(",");
+        Serial.print(gyroData_.x);
+        Serial.print(",");
+        Serail.print(gyroData_.y);
+        Serial.print(",");
+        Serial.println(gyroData_.z);
+#endif
+        isrTriggered = false;
     }
-
-    delay(delayTime);
 }
 
 //------------------------------------------------------------------------------
@@ -81,6 +104,14 @@ void loop()
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 
+void isrRoutine()
+{
+    if (isrTriggered)
+        Logger::error("ISR trigged an interrupt before previous interrupt was finished being processed!!!!!!");
+    isrTriggered = true;
+}
+
+//  --------------------------------------------------------------------------------------------------------------------
 void openFile(FsFile& file, const char* filename)
 {
     int fileAppend = 0; // Add a value to begining of file if one already exists
@@ -104,6 +135,7 @@ void openFile(FsFile& file, const char* filename)
     }
 }
 
+//  --------------------------------------------------------------------------------------------------------------------
 void crwLogger(Logger::Level level, const char* module, const char* message)
 {
 #if defined(LOG_TO_FILE) && defined(USE_SD_CARD)
@@ -123,6 +155,7 @@ void crwLogger(Logger::Level level, const char* module, const char* message)
 #endif
 }
 
+//  --------------------------------------------------------------------------------------------------------------------
 void writeDataToCsv(FsFile& file, int16_t& data, bool endLine)
 {
     if (endLine)
@@ -133,6 +166,7 @@ void writeDataToCsv(FsFile& file, int16_t& data, bool endLine)
         file.print(",");
     }
 }
+//  --------------------------------------------------------------------------------------------------------------------
 void writeDataToCsv(FsFile& file, float& data, bool endLine)
 {
     if (endLine)
@@ -143,6 +177,7 @@ void writeDataToCsv(FsFile& file, float& data, bool endLine)
         file.print(",");
     }
 }
+//  --------------------------------------------------------------------------------------------------------------------
 void writeDataToCsv(FsFile& file, double& data, bool endLine)
 {
     if (endLine)
@@ -150,6 +185,48 @@ void writeDataToCsv(FsFile& file, double& data, bool endLine)
     else
     {
         file.print(data);
+        file.print(",");
+    }
+}
+
+//  --------------------------------------------------------------------------------------------------------------------
+void writeDataToCsv(FsFile& file, ADXL357::AccelerometerData& data, bool endLine)
+{
+    file.print(data.x);
+    file.print(",");
+    file.print(data.y);
+    file.print(",");
+    file.print(data.z);
+    file.print(",");
+    file.print(data.xRaw);
+    file.print(",");
+    file.print(data.yRaw);
+    if (endLine)
+        file.println(data.zRaw);
+    else
+    {
+        file.print(data.zRaw);
+        file.print(",");
+    }
+}
+
+//  --------------------------------------------------------------------------------------------------------------------
+void writeDataToCsv(FsFile& file, IAM20380::GyroData& data, bool endLine)
+{
+    file.print(data.x);
+    file.print(",");
+    file.print(data.y);
+    file.print(",");
+    file.print(data.z);
+    file.print(",");
+    file.print(data.xRaw);
+    file.print(",");
+    file.print(data.yRaw);
+    if (endLine)
+        file.println(data.zRaw);
+    else
+    {
+        file.print(data.zRaw);
         file.print(",");
     }
 }

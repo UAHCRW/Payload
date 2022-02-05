@@ -86,18 +86,12 @@ namespace IAM20380
         double y;
         double z;
         double temp;
+        uint16_t xRaw;
+        uint16_t yRaw;
+        uint16_t zRaw;
+        uint16_t tempRaw;
 
-        GyroData() : x(0.0), y(0.0), z(0.0), temp(0.0){};
-    };
-
-    struct GyroRawData
-    {
-        uint16_t x;
-        uint16_t y;
-        uint16_t z;
-        uint16_t temp;
-
-        GyroRawData() : x(0), y(0), z(0), temp(0){};
+        GyroData() : x(0.0), y(0.0), z(0.0), temp(0.0), xRaw(0), yRaw(0), zRaw(0), tempRaw(0){};
     };
 
     struct GyroscopeConfig
@@ -122,10 +116,11 @@ namespace IAM20380
 
     class Gyroscope final
     {
-        Gyroscope(uint8_t chipSelectPin, uint8_t clock, GyroscopeConfig& config);
+        public:
+        Gyroscope(){};
+        Gyroscope(uint8_t chipSelectPin, uint32_t clock, GyroscopeConfig& config);
         ~Gyroscope(){};
 
-        public:
         // API to get measurements from sensor
         ////////////////////////////////////////////////////////////
         /// \brief Starts the sensor and ensures secure connection
@@ -157,13 +152,13 @@ namespace IAM20380
         uint16_t getRawTemperature();
 
         /// \brief Gets the state of the gyrometer
-        GyroData getState() { return getState(getRawState()); }
+        void getState(GyroData& data);
 
-        /// \brief Gets the state of the gyrometer given the raw register output
-        GyroData getState(GyroRawData rawData);
+        /// \brief Gets the state of the gyrometer from the first FIFO sample
+        void getStateFromFifo(GyroData& data);
 
-        /// \brief Gets the state of the gyrometer in raw register form
-        GyroRawData getRawState();
+        /// \brief Gets the state from the last sample in the FIFO buffer
+        void getStateFromLastFifoSample(GyroData& data);
 
         /// \brief Set the gyro biases
         void setGyroBias(GyroData& bias);
@@ -186,6 +181,8 @@ namespace IAM20380
         bool validateWhoAmIReg() { return (getWhoAmIReg() == IAM_20380_WHO_AM_I); }
 
         void printGryoConfiguration();
+
+        uint16_t getNumBytesInFifo();
 
         private:
         void select();

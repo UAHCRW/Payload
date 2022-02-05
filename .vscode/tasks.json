@@ -6,7 +6,7 @@
         "kind": "build",
         "isDefault": true
       },
-      "command": "C:/Program Files (x86)/VisualTeensy_v1.4.0/make.exe",
+      "command": "C:/VisualTeensy_v1.4.0/make.exe",
       "args": [
         "all",
         "-j",
@@ -19,7 +19,7 @@
         "kind": "build",
         "isDefault": true
       },
-      "command": "C:/Program Files (x86)/VisualTeensy_v1.4.0/make.exe",
+      "command": "C:/VisualTeensy_v1.4.0/make.exe",
       "args": [
         "clean"
       ]
@@ -30,7 +30,7 @@
         "kind": "build",
         "isDefault": true
       },
-      "command": "C:/Program Files (x86)/VisualTeensy_v1.4.0/make.exe",
+      "command": "C:/VisualTeensy_v1.4.0/make.exe",
       "args": [
         "upload",
         "-j",

@@ -115,18 +115,12 @@ namespace ADXL357
         double y;
         double z;
         double temp;
+        uint32_t xRaw;
+        uint32_t yRaw;
+        uint32_t zRaw;
+        uint32_t tempRaw;
 
-        AccelerometerData() : x(0.0), y(0.0), z(0.0), temp(0.0) {}
-    };
-
-    struct AccelerometerRawData
-    {
-        uint32_t x;
-        uint32_t y;
-        uint32_t z;
-        uint32_t temp;
-
-        AccelerometerRawData() : x(0), y(0), z(0), temp(0) {}
+        AccelerometerData() : x(0.0), y(0.0), z(0.0), temp(0.0), xRaw(0), yRaw(0), zRaw(0), tempRaw(0) {}
     };
 
     struct AccelerometerConfig
@@ -139,7 +133,7 @@ namespace ADXL357
         InterruptPolarity interruptPolarity;
 
         AccelerometerConfig()
-            : odrLpfSetting(ODR_LPF::ODR_250_LP_62_5), hpfSetting(HIGH_PASS_FILTER::NO_FILTER),
+            : odrLpfSetting(ODR_LPF::ODR_1000_LP_250), hpfSetting(HIGH_PASS_FILTER::NO_FILTER),
               sensorRange(AccelRange::FORTY), i2cSpeed(I2CSpeed::HIGH_SPEED),
               interruptPolarity(InterruptPolarity::ACTIVE_HIGH)
         {
@@ -149,7 +143,8 @@ namespace ADXL357
     class Accelerometer final
     {
         public:
-        Accelerometer(uint8_t chipSelectPin, uint8_t clock, AccelerometerConfig& config);
+        Accelerometer(){};
+        Accelerometer(uint8_t chipSelectPin, uint32_t clock, AccelerometerConfig& config);
         ~Accelerometer(){};
 
         // API to get measurements from sensor
@@ -183,11 +178,9 @@ namespace ADXL357
         uint16_t getRawTemperature();
 
         /// \brief Gets the sensor state, Accelerometer measurements in X, Y, Z, and temperatures
-        AccelerometerData getState();
-        AccelerometerData getState(AccelerometerRawData& rawData);
-
-        /// \brief Gets the sensor state but leaves them in the form just as they was received from the register
-        AccelerometerRawData getRawState();
+        void getState(AccelerometerData& data);
+        void getStateFromFifo(AccelerometerData& data);
+        void getStateFromFifoLastDataSample(AccelerometerData& data);
 
         /// \brief Sets the bias along each sensor axis, temperature is ignored
         void setAccelerometerBias(AccelerometerData& data);
@@ -273,9 +266,6 @@ namespace ADXL357
 
         /// \brief The number of valid entries in the FIFO
         uint8_t getFifoValidSamples();
-
-        /// \brief Gets a complete accelerometer measurement from the FIFO
-        void getFifoData(double& x, double& y, double& z);
 
         // Status Register
         /////////////////////////////////////////////

@@ -7,7 +7,7 @@ namespace ADXL357
     // Public
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    Accelerometer::Accelerometer(uint8_t chipSelectPin, uint8_t clock, AccelerometerConfig& config)
+    Accelerometer::Accelerometer(uint8_t chipSelectPin, uint32_t clock, AccelerometerConfig& config)
         : chipSelect_(chipSelectPin), spiClockSpeed_(clock), config_(config)
     {
     }
@@ -47,36 +47,60 @@ namespace ADXL357
     }
 
     // -----------------------------------------------------------------------------------------------------------------
-    AccelerometerData Accelerometer::getState()
+    void Accelerometer::getState(AccelerometerData& data)
     {
-        AccelerometerData data;
         data.x    = getAccelX();
         data.y    = getAccelY();
         data.z    = getAccelZ();
         data.temp = getTemperature();
-        return data;
+        data.xRaw = getRawAccelX();
+        data.yRaw = getRawAccelY();
+        data.zRaw = getRawAccelZ();
     }
 
     // -----------------------------------------------------------------------------------------------------------------
-    AccelerometerData Accelerometer::getState(AccelerometerRawData& rawData)
+    void Accelerometer::getStateFromFifoLastDataSample(AccelerometerData& data)
     {
-        AccelerometerData data;
-        data.x    = rawData.x;
-        data.y    = rawData.y;
-        data.z    = rawData.z;
-        data.temp = rawData.temp;
-        return data;
+        uint16_t numSamples = getFifoSamples();
+
+        uint8_t buff[9]{0};
+
+        for (int ii = 0; ii < numSamples; ii++)
+        {
+            readRegisters(REGISTER::FIFO_DATA, buff, 9);
+            // Check to make sure the first result is along the x-axis
+            if ((buff[2] & 0x1) != 1) Logger::error("FIFO read found first entry not to correspond to the X-Axis!");
+
+            if (((buff[2] >> 1) & 0x1) != 0)
+                Logger::error("FIFO read found that read was done on an empty FIFO Buffer!");
+        }
+
+        for (int ii = 2; ii >= 0; ii--) { data.xRaw |= (buff[ii] << (ii > 0) ? (8 * ii - 4) : 0); }
+        for (int ii = 2; ii >= 0; ii--) { data.yRaw |= (buff[ii + 3] << (ii > 0) ? (8 * ii - 4) : 0); }
+        for (int ii = 2; ii >= 0; ii--) { data.zRaw |= (buff[ii + 6] << (ii > 0) ? (8 * ii - 4) : 0); }
+
+        data.x = converReadingRawToUseable(data.xRaw);
+        data.y = converReadingRawToUseable(data.yRaw);
+        data.z = converReadingRawToUseable(data.zRaw);
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
-    AccelerometerRawData Accelerometer::getRawState()
+    void Accelerometer::getStateFromFifo(AccelerometerData& data)
     {
-        AccelerometerRawData data;
-        data.x    = getRawAccelX();
-        data.y    = getRawAccelY();
-        data.z    = getRawAccelZ();
-        data.temp = getRawTemperature();
-        return data;
+        uint8_t buff[9]{0};
+        readRegisters(REGISTER::FIFO_DATA, buff, 9);
+
+        // Check to make sure the first result is along the x-axis
+        if ((buff[2] & 0x1) != 1) Logger::error("FIFO read found first entry not to correspond to the X-Axis!");
+
+        if (((buff[2] >> 1) & 0x1) != 0) Logger::error("FIFO read found that read was done on an empty FIFO Buffer!");
+
+        for (int ii = 2; ii >= 0; ii--) { data.xRaw |= (buff[ii] << (ii > 0) ? (8 * ii - 4) : 0); }
+        for (int ii = 2; ii >= 0; ii--) { data.yRaw |= (buff[ii + 3] << (ii > 0) ? (8 * ii - 4) : 0); }
+        for (int ii = 2; ii >= 0; ii--) { data.zRaw |= (buff[ii + 6] << (ii > 0) ? (8 * ii - 4) : 0); }
+
+        data.x = converReadingRawToUseable(data.xRaw);
+        data.y = converReadingRawToUseable(data.yRaw);
+        data.z = converReadingRawToUseable(data.zRaw);
     }
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -429,27 +453,6 @@ namespace ADXL357
         uint8_t regVal{0};
         readSingleRegister(REGISTER::FIFO_ENTRIES, regVal);
         return regVal;
-    }
-
-    // -----------------------------------------------------------------------------------------------------------------
-    void Accelerometer::getFifoData(double& x, double& y, double& z)
-    {
-        uint8_t buff[9]{0};
-        readRegisters(REGISTER::FIFO_DATA, buff, 9);
-
-        // Check to make sure the first result is along the x-axis
-        if ((buff[2] & 0x1) != 1) Logger::error("FIFO read found first entry not to correspond to the X-Axis!");
-
-        if (((buff[2] >> 1) & 0x1) != 0) Logger::error("FIFO read found that read was done on an empty FIFO Buffer!");
-
-        uint32_t xRaw = 0, yRaw = 0, zRaw = 0;
-        for (int ii = 2; ii >= 0; ii--) { xRaw |= (buff[ii] << (ii > 0) ? (8 * ii - 4) : 0); }
-        for (int ii = 2; ii >= 0; ii--) { yRaw |= (buff[ii + 3] << (ii > 0) ? (8 * ii - 4) : 0); }
-        for (int ii = 2; ii >= 0; ii--) { zRaw |= (buff[ii + 6] << (ii > 0) ? (8 * ii - 4) : 0); }
-
-        x = converReadingRawToUseable(xRaw);
-        y = converReadingRawToUseable(yRaw);
-        z = converReadingRawToUseable(zRaw);
     }
 
     // -----------------------------------------------------------------------------------------------------------------

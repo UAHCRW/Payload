@@ -8,15 +8,14 @@ Author: Charger Rocket Works 2021/2022 Team
 Date: Fall 2021
 */
 #include "ADXL357_Accelerometer.hpp"
-#include "Adafruit_LIS3MDL.h"
-#include "Adafruit_Sensor.h"
 #include "Arduino.h"
+#include "IAM_20380.hpp"
 #include "Logger.hpp"
-#include "MPU6050.h"
 #include "SPI.h"
 #include "SdFat.h"
 #include "settings.hpp"
-
+#include <avr/interrupt.h>
+#include <avr/io.h>
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 // SD Card Initialization
@@ -56,8 +55,27 @@ uint32_t readTime_{0};
 SdFs sd;
 FsFile trajectoryFile_;
 FsFile loggingFile_;
+bool isrTriggered{false};
+
+// Sensors
+ADXL357::Accelerometer acceleromter_;
+ADXL357::AccelerometerConfig accelConfig_;
+ADXL357::AccelerometerData accelData_;
+IAM20380::Gyroscope gyro_;
+IAM20380::GyroscopeConfig gyroConfig_;
+IAM20380::GyroData gyroData_;
+
+#define ACCELEROMETER_CHIP_SELECT 0
+#define GYRO_CHIP_SELECT          0
+#define BEAGLE_BONE_PULSE_PIN     38
+#define CRW_SPI_CLOCK_SPEED       8e6
 
 // Functions
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// \brief Interrupt service routine that is called on every beagle bone pulse
+void isrRoutine();
+
 /// \brief Opens a file system
 /// \param file a SD card file object
 /// \param filename pointer to char array containing the filename
@@ -76,3 +94,5 @@ void crwLogger(Logger::Level level, const char* module, const char* message);
 void writeDataToCsv(FsFile& file, int16_t& data, bool endLine = false);
 void writeDataToCsv(FsFile& file, float& data, bool endLine = false);
 void writeDataToCsv(FsFile& file, double& data, bool endLine = false);
+void writeDataToCsv(FsFile& file, ADXL357::AccelerometerData& data, bool endLine = false);
+void writeDataToCsv(FsFile& file, IAM20380::GyroData& data, bool endLine = false);

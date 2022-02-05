@@ -2,7 +2,7 @@
 
 namespace IAM20380
 {
-    Gyroscope::Gyroscope(uint8_t chipSelectPin, uint8_t clock, GyroscopeConfig& config)
+    Gyroscope::Gyroscope(uint8_t chipSelectPin, uint32_t clock, GyroscopeConfig& config)
     {
         chipSelect_    = chipSelectPin;
         spiClockSpeed_ = clock;
@@ -19,7 +19,7 @@ namespace IAM20380
         }
 
         // Set the sample rate
-        setSampleRateDividerReg(9);
+        setSampleRateDividerReg(0);
         setGyroConfigReg(config_.range, false);
         setUserControlRegister(config_.fifoEnabled, config_.i2cDisabled, false, false);
         setPowerManagement1Reg(false, config_.sleepEnabled, config_.inStandby, config_.tempDisabled);
@@ -40,15 +40,47 @@ namespace IAM20380
     }
 
     // -----------------------------------------------------------------------------------------------------------------
-    GyroData Gyroscope::getState(GyroRawData data)
+    void Gyroscope::getState(GyroData& data)
     {
-        GyroData scaledData;
-        scaledData.x    = convertReadingRawToUseable(data.x);
-        scaledData.y    = convertReadingRawToUseable(data.y);
-        scaledData.z    = convertReadingRawToUseable(data.z);
-        scaledData.temp = (double)(data.temp / IAM_20380_TEMP_SENSITIVITY_FACTOR + 25.0);
-        return scaledData;
+        data.xRaw    = getRawGyroX();
+        data.yRaw    = getRawGyroY();
+        data.zRaw    = getRawGyroZ();
+        data.tempRaw = getRawTemperature();
+        data.x       = convertReadingRawToUseable(data.xRaw);
+        data.y       = convertReadingRawToUseable(data.yRaw);
+        data.z       = convertReadingRawToUseable(data.zRaw);
+        data.temp    = (double)(data.tempRaw / IAM_20380_TEMP_SENSITIVITY_FACTOR + 25.0);
     }
+
+    // -----------------------------------------------------------------------------------------------------------------
+    void Gyroscope::getStateFromFifo(GyroData& data)
+    {
+        uint8_t buff[6]{0};
+        readRegisters(Register::FIFO_R_W, buff, 6);
+        for (int ii = 1; ii >= 0; ii--) { data.xRaw |= (buff[ii] << (ii > 0) ? (8 * ii) : 0); }
+        for (int ii = 1; ii >= 0; ii--) { data.yRaw |= (buff[ii + 2] << (ii > 0) ? (8 * ii) : 0); }
+        for (int ii = 1; ii >= 0; ii--) { data.zRaw |= (buff[ii + 4] << (ii > 0) ? (8 * ii) : 0); }
+
+        data.x = convertReadingRawToUseable(data.xRaw);
+        data.y = convertReadingRawToUseable(data.yRaw);
+        data.z = convertReadingRawToUseable(data.zRaw);
+    }
+
+    void Gyroscope::getStateFromLastFifoSample(GyroData& data)
+    {
+        uint16_t numSamples = getNumBytesInFifo() / 6;
+        uint8_t buff[6]{0};
+        readRegisters(Register::FIFO_R_W, buff, 9);
+        for (int ii = 0; ii < numSamples; ii++) { readRegisters(Register::FIFO_R_W, buff, 6); }
+        for (int ii = 1; ii >= 0; ii--) { data.xRaw |= (buff[ii] << (ii > 0) ? (8 * ii) : 0); }
+        for (int ii = 1; ii >= 0; ii--) { data.yRaw |= (buff[ii + 2] << (ii > 0) ? (8 * ii) : 0); }
+        for (int ii = 1; ii >= 0; ii--) { data.zRaw |= (buff[ii + 4] << (ii > 0) ? (8 * ii) : 0); }
+
+        data.x = convertReadingRawToUseable(data.xRaw);
+        data.y = convertReadingRawToUseable(data.yRaw);
+        data.z = convertReadingRawToUseable(data.zRaw);
+    }
+
     // -----------------------------------------------------------------------------------------------------------------
     void Gyroscope::setGyroBias(GyroData& bias)
     {
@@ -122,6 +154,17 @@ namespace IAM20380
         Logger::notice("---------------------------------------------------------------------\n");
     }
 
+    // -----------------------------------------------------------------------------------------------------------------
+    uint16_t Gyroscope::getNumBytesInFifo()
+    {
+        uint8_t buff[2]{0};
+        readRegisters(Register::FIFO_COUNTH, buff, 2);
+
+        uint16_t val{0};
+        val |= buff[1] << 8;
+        val |= buff[0];
+        return val;
+    }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Private
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -273,4 +316,5 @@ namespace IAM20380
             default: rangeScaleFactor_ = 0;
         }
     }
+
 };
