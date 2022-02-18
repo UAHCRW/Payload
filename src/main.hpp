@@ -55,7 +55,9 @@ uint32_t readTime_{0};
 SdFs sd;
 FsFile trajectoryFile_;
 FsFile loggingFile_;
-bool isrTriggered{false};
+volatile bool isrTriggered{false};
+volatile bool isrMissed{false};
+double lastFakeInterruptFire_{0.0};
 
 // Sensors
 ADXL357::Accelerometer acceleromter_;
@@ -66,9 +68,12 @@ IAM20380::GyroscopeConfig gyroConfig_;
 IAM20380::GyroData gyroData_;
 
 #define ACCELEROMETER_CHIP_SELECT 0
-#define GYRO_CHIP_SELECT          0
+#define GYRO_CHIP_SELECT          10
 #define BEAGLE_BONE_PULSE_PIN     38
-#define CRW_SPI_CLOCK_SPEED       8e6
+#define CRW_SPI_CLOCK_SPEED       2e6
+
+// Rename the UART object to make it more readable in the code since it is so close to Serial
+#define BB_UART Serial8
 
 // Functions
 // ---------------------------------------------------------------------------------------------------------------------

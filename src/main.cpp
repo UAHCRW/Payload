@@ -2,6 +2,12 @@
 #include "main.hpp"
 #include "math.h"
 
+// Comment / Uncomment these defines to configure how the teensy is used.
+#define USE_SD_CARD   // Allows writing to the SD Card
+#define LOG_TO_SERIAL // Used for when using teensy without beagle bone to verify operation
+// #define LOG_TO_FILE        // Ignore writing to a file
+#define INTERRUPT_NOT_USED // So we can use the teensy by itself.
+
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 // Setup()
@@ -9,7 +15,9 @@
 //------------------------------------------------------------------------------
 void setup()
 {
+    Serial.println("here");
     Serial.begin(settings_.getBaudRate());
+    BB_UART.begin(settings_.getBaudRate());
 
     Wire.begin();
 
@@ -17,7 +25,7 @@ void setup()
     Logger::setLogLevel(settings_.getLoggingLevel());
 
     pinMode(LED_BUILTIN, OUTPUT);
-    pinMode(BEAGLE_BONE_PULSE_PIN, INPUT_PULLUP);
+    pinMode(BEAGLE_BONE_PULSE_PIN, INPUT_PULLDOWN);
     pinMode(ACCELEROMETER_CHIP_SELECT, OUTPUT);
     pinMode(GYRO_CHIP_SELECT, OUTPUT);
     attachInterrupt(digitalPinToInterrupt(BEAGLE_BONE_PULSE_PIN), isrRoutine, CHANGE);
@@ -71,16 +79,33 @@ void setup()
 //------------------------------------------------------------------------------
 void loop()
 {
+#ifdef INTERRUPT_NOT_USED
+    Serial.println("Firing");
+    if (millis() - lastFakeInterruptFire_ > 0.01)
+    {
+        lastFakeInterruptFire_ = millis();
+        isrRoutine();
+    }
+#endif
+    if (isrMissed)
+    {
+        Logger::error("ISR trigged an interrupt before previous interrupt was finished being processed!!!!!!");
+        isrMissed = false;
+    }
+
     if (isrTriggered)
     {
         acceleromter_.getStateFromFifoLastDataSample(accelData_);
         gyro_.getStateFromLastFifoSample(gyroData_);
+
+        // Write data to SD card if we have it turned on
 #if defined(LOG_TO_FILE) && defined(USE_SD_CARD)
-        writeDataToCsv(accelData_);
-        writeDataToCsv(gyroData_, true);
+        writeDataToCsv(trajectoryFile_, accelData_);
+        writeDataToCsv(trajectoryFile_, gyroData_, true);
         trajectoryFile_.flush();
 #endif
 
+        // Write data to the main serial port on the teensy for optionally using teensy without beagle bone
 #ifdef LOG_TO_SERIAL
         Serial.print(accelData_.x);
         Serial.print(",");
@@ -90,10 +115,23 @@ void loop()
         Serial.print(",");
         Serial.print(gyroData_.x);
         Serial.print(",");
-        Serail.print(gyroData_.y);
+        Serial.print(gyroData_.y);
         Serial.print(",");
         Serial.println(gyroData_.z);
 #endif
+
+        // Send data to the beagle bone
+        BB_UART.print(accelData_.x);
+        BB_UART.print(",");
+        BB_UART.print(accelData_.y);
+        BB_UART.print(",");
+        BB_UART.print(accelData_.z);
+        BB_UART.print(",");
+        BB_UART.print(gyroData_.x);
+        BB_UART.print(",");
+        BB_UART.print(gyroData_.y);
+        BB_UART.print(",");
+        BB_UART.println(gyroData_.z);
         isrTriggered = false;
     }
 }
@@ -106,8 +144,7 @@ void loop()
 
 void isrRoutine()
 {
-    if (isrTriggered)
-        Logger::error("ISR trigged an interrupt before previous interrupt was finished being processed!!!!!!");
+    if (isrTriggered) isrMissed = true;
     isrTriggered = true;
 }
 
