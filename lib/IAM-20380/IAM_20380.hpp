@@ -110,7 +110,7 @@ namespace IAM20380
 
         GyroscopeConfig()
             : xAxisState(AxisState::ENABLED), yAxisState(AxisState::ENABLED), zAxisState(AxisState::ENABLED),
-              fifoEnabled(false), range(GyroRange::DPS_2000), i2cDisabled(false), sleepEnabled(false), inStandby(false),
+              fifoEnabled(true), range(GyroRange::DPS_2000), i2cDisabled(true), sleepEnabled(false), inStandby(false),
               sampleRateDivider(0){};
     };
 
@@ -135,6 +135,9 @@ namespace IAM20380
 
         /// \brief Gets the gyrometer measurement along the z - axis
         double getGyroZ() { return readGyrometerReg(Register::GYRO_ZOUT_H); }
+
+        /// \brief Gets a complete X, Y, Z measurement from the main registers (not FIFO)
+        void getXYZ(float& x, float& y, float& z);
 
         /// \brief Gets the raw gyrometer measurement along the x - axis as is read from the register
         uint16_t getRawGyroX() { return readRawGyrometerReg(Register::GYRO_XOUT_H); }
@@ -187,8 +190,8 @@ namespace IAM20380
         private:
         void select();
         void deselect();
-        uint32_t readRawGyrometerReg(Register reg);
-        double readGyrometerReg(Register reg) { return convertReadingRawToUseable(readRawGyrometerReg(reg)); }
+        uint16_t readRawGyrometerReg(Register reg);
+        double readGyrometerReg(Register reg) { return convertReadingRawToUseable((readRawGyrometerReg(reg))); }
 
         // Read Registers
         /////////////////////////////////////////////
@@ -229,6 +232,10 @@ namespace IAM20380
         void setPowerManagement2Reg(AxisState xState, AxisState yState, AxisState zState);
         void getPowerManagement2Reg(AxisState& xState, AxisState& yState, AxisState& zState);
 
+        // FIFO Enable Register
+        void setFifoEnableRegister(AxisState xState, AxisState yState, AxisState zState);
+        void getFifoEnableRegister(AxisState& xState, AxisState& yState, AxisState& zState);
+
         // Setup
         /////////////////////////////////////////////
         void setRangeScaleFactor();
@@ -236,10 +243,10 @@ namespace IAM20380
         // Misc
         /////////////////////////////////////////////
         /// \brief Converts a value from the register in units LSB to a useable reading in G
-        double convertReadingRawToUseable(uint32_t reading) { return (double)(reading) / rangeScaleFactor_; }
+        double convertReadingRawToUseable(uint16_t reading) { return (double)((int16_t)(reading)) / rangeScaleFactor_; }
 
         /// \brief Converts a value in G to a value for the register in units LSB
-        uint32_t convertReadingUseableToRaw(double reading) { return (uint32_t)(reading * rangeScaleFactor_); }
+        uint16_t convertReadingUseableToRaw(double reading) { return (uint32_t)(reading * rangeScaleFactor_); }
 
         // Members
         /////////////////////////////////////////////

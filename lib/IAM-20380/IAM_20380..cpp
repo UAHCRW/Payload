@@ -10,6 +10,27 @@ namespace IAM20380
     }
 
     // -----------------------------------------------------------------------------------------------------------------
+    void Gyroscope::getXYZ(float& x, float& y, float& z)
+    {
+        uint8_t buff[6]{0};
+        readRegisters(Register::GYRO_XOUT_H, buff, 6);
+        uint16_t val{0};
+        val |= buff[0] << 8;
+        val |= buff[1];
+        x = float((int16_t)(val) / rangeScaleFactor_);
+
+        val = 0;
+        val |= buff[2] << 8;
+        val |= buff[3];
+        y = float((int16_t)(val) / rangeScaleFactor_);
+
+        val = 0;
+        val |= buff[4] << 8;
+        val |= buff[5];
+        z = float((int16_t)(val) / rangeScaleFactor_);
+    }
+
+    // -----------------------------------------------------------------------------------------------------------------
     bool Gyroscope::begin()
     {
         if (!validateWhoAmIReg())
@@ -19,11 +40,14 @@ namespace IAM20380
         }
 
         // Set the sample rate
+        delay(1);
         setSampleRateDividerReg(0);
         setGyroConfigReg(config_.range, false);
         setUserControlRegister(config_.fifoEnabled, config_.i2cDisabled, false, false);
         setPowerManagement1Reg(false, config_.sleepEnabled, config_.inStandby, config_.tempDisabled);
         setPowerManagement2Reg(config_.xAxisState, config_.yAxisState, config_.zAxisState);
+        setFifoEnableRegister(AxisState::ENABLED, AxisState::ENABLED, AxisState::DISABLED);
+        setRangeScaleFactor();
 
         return true;
     }
@@ -69,6 +93,9 @@ namespace IAM20380
     void Gyroscope::getStateFromLastFifoSample(GyroData& data)
     {
         uint16_t numSamples = getNumBytesInFifo() / 6;
+
+        if (numSamples == 0) return;
+
         uint8_t buff[6]{0};
         readRegisters(Register::FIFO_R_W, buff, 9);
         for (int ii = 0; ii < numSamples; ii++) { readRegisters(Register::FIFO_R_W, buff, 6); }
@@ -128,9 +155,14 @@ namespace IAM20380
     // -----------------------------------------------------------------------------------------------------------------
     void Gyroscope::printGryoConfiguration()
     {
-        auto boolalpha         = [](bool x) { return ((x) ? "true" : "false"); };
-        auto axisPrint         = [](AxisState x) { return ((x == AxisState::ENABLED) ? "ENABLED" : "DISABLED"); };
+        auto boolalpha = [](bool x) { return ((x) ? "true" : "false"); };
+        auto axisPrint = [](AxisState x) { return ((x == AxisState::ENABLED) ? "ENABLED" : "DISABLED"); };
+        AxisState xFifo{AxisState::DISABLED};
+        AxisState yFifo{AxisState::DISABLED};
+        AxisState zFifo{AxisState::DISABLED};
+        getFifoEnableRegister(xFifo, yFifo, zFifo);
         GyroscopeConfig config = getGyroConfig();
+
         Logger::notice("---------------------------------------------------------------------");
         Logger::notice("                IAM-20380 Gyrometer Configuration");
         Logger::notice("---------------------------------------------------------------------");
@@ -145,12 +177,31 @@ namespace IAM20380
         Logger::notice(("\tZ Axis: " + String(config.bias.z) + "\n").c_str());
 
         Logger::notice(" * Sensor Configuration");
-        Logger::notice(("\tFIFO Enabled:                " + String(boolalpha(config.fifoEnabled))).c_str());
         Logger::notice(("\tI2C Disabled:                " + String(boolalpha(config.i2cDisabled))).c_str());
         Logger::notice(("\tSleep Enabled:               " + String(boolalpha(config.sleepEnabled))).c_str());
         Logger::notice(("\tIn Standby Mode:             " + String(boolalpha(config.inStandby))).c_str());
         Logger::notice(("\tTemperature Sensor Disabled: " + String(boolalpha(config.tempDisabled))).c_str());
         Logger::notice(("\tSample Rate Divider:         " + String(config.sampleRateDivider)).c_str());
+        String range;
+        range += "\tSensor Range:                ";
+        switch (config.range)
+        {
+            case GyroRange::DPS_250: range += String(250); break;
+            case GyroRange::DPS_500: range += String(500); break;
+            case GyroRange::DPS_1000: range += String(1000); break;
+            case GyroRange::DPS_2000: range += String(2000); break;
+
+            default: break;
+        }
+        range += " dps\n";
+        Logger::notice(range.c_str());
+
+        Logger::notice(" * FIFO Configuration");
+        Logger::notice(("\tFIFO Enabled: " + String(boolalpha(config.fifoEnabled))).c_str());
+        Logger::notice(("\tX Axis:       " + String(axisPrint(xFifo))).c_str());
+        Logger::notice(("\tY Axis:       " + String(axisPrint(yFifo))).c_str());
+        Logger::notice(("\tZ Axis:       " + String(axisPrint(zFifo))).c_str());
+        Logger::notice(("\tTemp:         " + String(axisPrint(AxisState::DISABLED)) + "\n").c_str());
         Logger::notice("---------------------------------------------------------------------\n");
     }
 
@@ -161,8 +212,8 @@ namespace IAM20380
         readRegisters(Register::FIFO_COUNTH, buff, 2);
 
         uint16_t val{0};
-        val |= buff[1] << 8;
-        val |= buff[0];
+        val |= buff[0] << 8;
+        val |= buff[1];
         return val;
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -171,50 +222,55 @@ namespace IAM20380
 
     void Gyroscope::select()
     {
-        SPI.beginTransaction(SPISettings(spiClockSpeed_, MSBFIRST, SPI_MODE0));
         digitalWrite(chipSelect_, LOW);
+        SPI1.beginTransaction(SPISettings(14e6, MSBFIRST, SPI_MODE0));
     }
 
     // -----------------------------------------------------------------------------------------------------------------
     void Gyroscope::deselect()
     {
         digitalWrite(chipSelect_, HIGH);
-        SPI.endTransaction();
+        SPI1.endTransaction();
+        delay(1);
     }
 
     // -----------------------------------------------------------------------------------------------------------------
-    uint32_t Gyroscope::readRawGyrometerReg(Register reg)
+    uint16_t Gyroscope::readRawGyrometerReg(Register reg)
     {
-        uint8_t buff[3]{0};
-        readRegisters(reg, buff, 3);
-        uint32_t accel{0};
-        for (int ii = 2; ii >= 0; ii--) { accel |= (buff[ii] << ((ii > 0) ? (8 * ii - 5) : 0)); }
-        return accel;
+        uint8_t buff[2]{0};
+        readRegisters(reg, buff, 2);
+        uint16_t val{0};
+        val |= buff[0] << 8;
+        val |= buff[1];
+        return val;
     }
 
     // -----------------------------------------------------------------------------------------------------------------
     void Gyroscope::readRegisters(uint8_t reg, uint8_t* buffer, uint8_t bytes)
     {
         select();
-        SPI.transfer(reg | 0x80);
-        for (int ii = 0; ii < bytes; ii++) buffer[ii] = SPI.transfer(0x00);
+        SPI1.transfer(reg | 0x80);
+        for (int ii = 0; ii < bytes; ii++) { buffer[ii] = SPI1.transfer(0x00); }
         deselect();
     }
 
     // -----------------------------------------------------------------------------------------------------------------
     uint8_t Gyroscope::readSingleRegister(uint8_t reg)
     {
-        uint8_t buff[1];
-        readRegisters(reg, buff, 1);
-        return buff[0];
+        select();
+        SPI1.transfer(reg | 0x80);
+        uint8_t data = 0;
+        data         = SPI1.transfer(0x00);
+        deselect();
+        return data;
     }
 
     // -----------------------------------------------------------------------------------------------------------------
     void Gyroscope::writeRegisters(uint8_t reg, uint8_t* buffer, uint8_t bytes)
     {
         select();
-        SPI.transfer(reg);
-        for (int ii = 0; ii < bytes; ii++) SPI.transfer(buffer[ii]);
+        SPI1.transfer(reg);
+        for (int ii = 0; ii < bytes; ii++) { SPI1.transfer(buffer[ii]); }
         deselect();
     }
 
@@ -302,6 +358,25 @@ namespace IAM20380
         xState      = (AxisState)((val >> 2) & 0x01);
         yState      = (AxisState)((val >> 1) & 0x01);
         zState      = (AxisState)(val & 0x01);
+    }
+
+    // -----------------------------------------------------------------------------------------------------------------
+    void Gyroscope::setFifoEnableRegister(AxisState xState, AxisState yState, AxisState zState)
+    {
+        uint8_t val = 0;
+        val |= (uint8_t)(xState) << 6;
+        val |= (uint8_t)(yState) << 5;
+        val |= (uint8_t)(zState) << 4;
+        writeSingleRegister(Register::FIFO_EN, val);
+    }
+
+    // -----------------------------------------------------------------------------------------------------------------
+    void Gyroscope::getFifoEnableRegister(AxisState& xState, AxisState& yState, AxisState& zState)
+    {
+        uint8_t val = readSingleRegister(Register::FIFO_EN);
+        xState      = (AxisState)((uint8_t)(val >> 6) & 0x01);
+        yState      = (AxisState)((uint8_t)(val >> 5) & 0x01);
+        zState      = (AxisState)((uint8_t)(val >> 4) & 0x01);
     }
 
     // -----------------------------------------------------------------------------------------------------------------

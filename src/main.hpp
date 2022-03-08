@@ -16,6 +16,8 @@ Date: Fall 2021
 #include "settings.hpp"
 #include <avr/interrupt.h>
 #include <avr/io.h>
+#include <logger.hpp>
+#include <stdint.h>
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 // SD Card Initialization
@@ -67,10 +69,10 @@ IAM20380::Gyroscope gyro_;
 IAM20380::GyroscopeConfig gyroConfig_;
 IAM20380::GyroData gyroData_;
 
-#define ACCELEROMETER_CHIP_SELECT 0
-#define GYRO_CHIP_SELECT          10
+#define ACCELEROMETER_CHIP_SELECT 9
+#define GYRO_CHIP_SELECT          6
 #define BEAGLE_BONE_PULSE_PIN     38
-#define CRW_SPI_CLOCK_SPEED       2e6
+#define CRW_SPI_CLOCK_SPEED       5000000
 
 // Rename the UART object to make it more readable in the code since it is so close to Serial
 #define BB_UART Serial8

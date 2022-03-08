@@ -15,14 +15,26 @@ namespace ADXL357
     // -----------------------------------------------------------------------------------------------------------------
     bool Accelerometer::begin()
     {
+        // select();
+
+        // SPI1.transfer(((uint8_t)(REGISTER::DEV_ID_MEM) << 1) | 0x0);
+
+        // uint64_t ii = 0;
+
+        // for (;;) { ii = SPI1.transfer(0x00); }
         // Check the status of the first three registers and make sure that the values are correct.
 
+        setPwrControlReg(false, false, false);
         // These registers never change. If these values dont match something is wrong
         if ((getAnalogDevicesID() != ANALOG_DEV_ID) || (getAnalogDevicesMemsID() != DEV_MEMS_ID) ||
             (getDeviceId() != DEVICE_ID))
         {
             Logger::error("One of all of the Analog Device ID, Analog MEMS ID, or Device ID didn't match ICD for the "
                           "ADXL357 Accelerometer");
+            Logger::notice(("AD ID: " + String((uint16_t)(getAnalogDevicesID())) +
+                            "     MEMS ID: " + String((uint16_t)(getAnalogDevicesMemsID())) +
+                            "    Device ID: " + String((uint16_t)(getDeviceId())))
+                           .c_str());
             return false;
         }
 
@@ -292,15 +304,17 @@ namespace ADXL357
 
     void Accelerometer::select()
     {
-        SPI.beginTransaction(SPISettings(spiClockSpeed_, MSBFIRST, SPI_MODE0));
+        SPI1.beginTransaction(SPISettings(spiClockSpeed_, MSBFIRST, SPI_MODE2));
         digitalWrite(chipSelect_, LOW);
+        Serial.print("Setting chip select pin low ");
+        Serial.println(chipSelect_);
     }
 
     // -----------------------------------------------------------------------------------------------------------------
     void Accelerometer::deselect()
     {
         digitalWrite(chipSelect_, HIGH);
-        SPI.endTransaction();
+        SPI1.endTransaction();
     }
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -324,8 +338,25 @@ namespace ADXL357
     void Accelerometer::readRegisters(uint8_t reg, uint8_t* buffer, uint8_t bytes)
     {
         select();
-        SPI.transfer((reg << 1) | 0x1);
-        for (int ii = 0; ii < bytes; ii++) buffer[ii] = SPI.transfer(0x00);
+        SPI1.transfer((reg << 1) | 0x1);
+        deselect();
+        select();
+        Serial.print("Reading register ");
+        Serial.print(reg);
+        Serial.print(",  ");
+        Serial.println((reg << 1) | 0x01, BIN);
+        for (int ii = 0; ii < bytes; ii++) buffer[ii] = SPI1.transfer(0x00);
+        for (int ii = 0; ii < bytes; ii++)
+        {
+            Serial.print("[");
+            Serial.print(ii);
+            Serial.print("] ");
+            Serial.print(buffer[ii]);
+            Serial.print(",  ");
+        }
+        Serial.println("");
+        Serial.println("");
+
         deselect();
     }
 
@@ -341,8 +372,8 @@ namespace ADXL357
     void Accelerometer::writeRegisters(uint8_t reg, uint8_t* buffer, uint8_t bytes)
     {
         select();
-        SPI.transfer((reg << 1));
-        for (int ii = 0; ii < bytes; ii++) SPI.transfer(buffer[ii]);
+        SPI1.transfer((reg << 1));
+        for (int ii = 0; ii < bytes; ii++) SPI1.transfer(buffer[ii]);
         deselect();
     }
 

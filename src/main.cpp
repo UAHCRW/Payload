@@ -3,9 +3,9 @@
 #include "math.h"
 
 // Comment / Uncomment these defines to configure how the teensy is used.
-#define USE_SD_CARD   // Allows writing to the SD Card
-#define LOG_TO_SERIAL // Used for when using teensy without beagle bone to verify operation
-// #define LOG_TO_FILE        // Ignore writing to a file
+#define USE_SD_CARD        // Allows writing to the SD Card
+#define LOG_TO_SERIAL      // Used for when using teensy without beagle bone to verify operation
+#define LOG_TO_FILE        // Ignore writing to a file
 #define INTERRUPT_NOT_USED // So we can use the teensy by itself.
 
 //------------------------------------------------------------------------------
@@ -15,20 +15,22 @@
 //------------------------------------------------------------------------------
 void setup()
 {
-    Serial.println("here");
     Serial.begin(settings_.getBaudRate());
     BB_UART.begin(settings_.getBaudRate());
+    SPI1.begin();
 
-    Wire.begin();
-
+    Serial.println("\n\n\n\n");
     Logger::setOutputFunction(crwLogger);
     Logger::setLogLevel(settings_.getLoggingLevel());
 
     pinMode(LED_BUILTIN, OUTPUT);
     pinMode(BEAGLE_BONE_PULSE_PIN, INPUT_PULLDOWN);
-    pinMode(ACCELEROMETER_CHIP_SELECT, OUTPUT);
     pinMode(GYRO_CHIP_SELECT, OUTPUT);
+    digitalWrite(GYRO_CHIP_SELECT, HIGH);
+    digitalWrite(LED_BUILTIN, LOW);
     attachInterrupt(digitalPinToInterrupt(BEAGLE_BONE_PULSE_PIN), isrRoutine, CHANGE);
+
+    delay(2000);
 
 #ifdef USE_SD_CARD
     // Initialize the SD.
@@ -46,30 +48,32 @@ void setup()
 #else
     Logger::notice("CRW DRNS Software was built without SD Card. Files will not be written.")
 #endif
-
     Logger::notice("---------------------------------------------------------------------");
     Logger::notice("          Dead Reckoning Navigation System (DRNS) Startup");
     Logger::notice("---------------------------------------------------------------------");
     Logger::notice("");
-    settings_.scanI2CNetwork();
     settings_.printCrwPayloadSettings();
 
-    acceleromter_ = ADXL357::Accelerometer(ACCELEROMETER_CHIP_SELECT, CRW_SPI_CLOCK_SPEED, accelConfig_);
-    gyro_         = IAM20380::Gyroscope(GYRO_CHIP_SELECT, CRW_SPI_CLOCK_SPEED, gyroConfig_);
+    gyro_ = IAM20380::Gyroscope(GYRO_CHIP_SELECT, 14e6, gyroConfig_);
 
     bool initialized{false};
 
-    initialized &= settings_.initializeCrwAccelerometer(&acceleromter_);
-    initialized &= settings_.initiailzeCrwGyroscope(&gyro_);
+    initialized |= settings_.initiailzeCrwGyroscope(&gyro_);
 
     if (!initialized)
     {
+        Logger::error("Initialization Failed");
         for (;;)
         {
-            Logger::error("Initialization Failed");
-            delay(1);
+            digitalWrite(LED_BUILTIN, HIGH);
+            delay(500);
+            digitalWrite(LED_BUILTIN, LOW);
+            delay(500);
         }
     }
+
+    Logger::notice("DRNS Initialization succesful");
+    digitalWrite(LED_BUILTIN, HIGH);
 }
 
 //------------------------------------------------------------------------------
@@ -80,8 +84,7 @@ void setup()
 void loop()
 {
 #ifdef INTERRUPT_NOT_USED
-    Serial.println("Firing");
-    if (millis() - lastFakeInterruptFire_ > 0.01)
+    if ((millis() - lastFakeInterruptFire_) > 100.0)
     {
         lastFakeInterruptFire_ = millis();
         isrRoutine();
@@ -95,44 +98,37 @@ void loop()
 
     if (isrTriggered)
     {
-        acceleromter_.getStateFromFifoLastDataSample(accelData_);
+        isrTriggered = false;
         gyro_.getStateFromLastFifoSample(gyroData_);
 
         // Write data to SD card if we have it turned on
 #if defined(LOG_TO_FILE) && defined(USE_SD_CARD)
-        writeDataToCsv(trajectoryFile_, accelData_);
         writeDataToCsv(trajectoryFile_, gyroData_, true);
         trajectoryFile_.flush();
 #endif
 
         // Write data to the main serial port on the teensy for optionally using teensy without beagle bone
 #ifdef LOG_TO_SERIAL
-        Serial.print(accelData_.x);
-        Serial.print(",");
-        Serial.print(accelData_.y);
-        Serial.print(",");
-        Serial.print(accelData_.z);
-        Serial.print(",");
-        Serial.print(gyroData_.x);
-        Serial.print(",");
-        Serial.print(gyroData_.y);
-        Serial.print(",");
-        Serial.println(gyroData_.z);
+        // Serial.print(gyroData_.x);
+        // Serial.print(",  ");
+        // Serial.print(gyroData_.y);
+        // Serial.print(",  ");
+        // Serial.println(gyroData_.z);
+        float x{0.0}, y{0.0}, z{0.0};
+        gyro_.getXYZ(x, y, z);
+        Serial.print(x);
+        Serial.print(",  ");
+        Serial.print(y);
+        Serial.print(",  ");
+        Serial.println(z);
 #endif
 
         // Send data to the beagle bone
-        BB_UART.print(accelData_.x);
-        BB_UART.print(",");
-        BB_UART.print(accelData_.y);
-        BB_UART.print(",");
-        BB_UART.print(accelData_.z);
-        BB_UART.print(",");
         BB_UART.print(gyroData_.x);
         BB_UART.print(",");
         BB_UART.print(gyroData_.y);
         BB_UART.print(",");
         BB_UART.println(gyroData_.z);
-        isrTriggered = false;
     }
 }
 
@@ -222,27 +218,6 @@ void writeDataToCsv(FsFile& file, double& data, bool endLine)
     else
     {
         file.print(data);
-        file.print(",");
-    }
-}
-
-//  --------------------------------------------------------------------------------------------------------------------
-void writeDataToCsv(FsFile& file, ADXL357::AccelerometerData& data, bool endLine)
-{
-    file.print(data.x);
-    file.print(",");
-    file.print(data.y);
-    file.print(",");
-    file.print(data.z);
-    file.print(",");
-    file.print(data.xRaw);
-    file.print(",");
-    file.print(data.yRaw);
-    if (endLine)
-        file.println(data.zRaw);
-    else
-    {
-        file.print(data.zRaw);
         file.print(",");
     }
 }
