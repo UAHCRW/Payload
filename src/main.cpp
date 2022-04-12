@@ -3,10 +3,9 @@
 #include "math.h"
 
 // Comment / Uncomment these defines to configure how the teensy is used.
-#define USE_SD_CARD        // Allows writing to the SD Card
-#define LOG_TO_SERIAL      // Used for when using teensy without beagle bone to verify operation
-#define LOG_TO_FILE        // Ignore writing to a file
-#define INTERRUPT_NOT_USED // So we can use the teensy by itself.
+// #define USE_SD_CARD   // Allows writing to the SD Card
+#define LOG_TO_SERIAL // Used for when using teensy without beagle bone to verify operation
+// #define LOG_TO_FILE   // Ignore writing to a file
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -24,11 +23,11 @@ void setup()
     Logger::setLogLevel(settings_.getLoggingLevel());
 
     pinMode(LED_BUILTIN, OUTPUT);
-    pinMode(BEAGLE_BONE_PULSE_PIN, INPUT_PULLDOWN);
+    // pinMode(BEAGLE_BONE_PULSE_PIN, INPUT_PULLDOWN);
     pinMode(GYRO_CHIP_SELECT, OUTPUT);
     digitalWrite(GYRO_CHIP_SELECT, HIGH);
     digitalWrite(LED_BUILTIN, LOW);
-    attachInterrupt(digitalPinToInterrupt(BEAGLE_BONE_PULSE_PIN), isrRoutine, CHANGE);
+    // attachInterrupt(digitalPinToInterrupt(BEAGLE_BONE_PULSE_PIN), isrRoutine, CHANGE);
 
     delay(2000);
 
@@ -46,7 +45,7 @@ void setup()
     openFile(trajectoryFile_, settings_.getTrajectoryFilename().c_str());
     openFile(loggingFile_, settings_.getLoggingFilename().c_str());
 #else
-    Logger::notice("CRW DRNS Software was built without SD Card. Files will not be written.")
+    Logger::notice("CRW DRNS Software was built without SD Card. Files will not be written.");
 #endif
     Logger::notice("---------------------------------------------------------------------");
     Logger::notice("          Dead Reckoning Navigation System (DRNS) Startup");
@@ -56,9 +55,9 @@ void setup()
 
     gyro_ = IAM20380::Gyroscope(GYRO_CHIP_SELECT, 14e6, gyroConfig_);
 
-    bool initialized{false};
+    bool initialized{true};
 
-    initialized |= settings_.initiailzeCrwGyroscope(&gyro_);
+    initialized &= settings_.initiailzeCrwGyroscope(&gyro_);
 
     if (!initialized)
     {
@@ -73,7 +72,13 @@ void setup()
     }
 
     Logger::notice("DRNS Initialization succesful");
-    digitalWrite(LED_BUILTIN, HIGH);
+    for (int ii = 0; ii < 6; ii++)
+    {
+        digitalWrite(LED_BUILTIN, HIGH);
+        delay(500);
+        digitalWrite(LED_BUILTIN, LOW);
+        delay(200);
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -83,52 +88,47 @@ void setup()
 //------------------------------------------------------------------------------
 void loop()
 {
-#ifdef INTERRUPT_NOT_USED
-    if ((millis() - lastFakeInterruptFire_) > 100.0)
-    {
-        lastFakeInterruptFire_ = millis();
-        isrRoutine();
-    }
-#endif
-    if (isrMissed)
-    {
-        Logger::error("ISR trigged an interrupt before previous interrupt was finished being processed!!!!!!");
-        isrMissed = false;
-    }
 
-    if (isrTriggered)
+    if (BB_UART.available() > 0)
     {
-        isrTriggered = false;
-        gyro_.getStateFromLastFifoSample(gyroData_);
+        String data = BB_UART.readString();
+        data.trim();
 
-        // Write data to SD card if we have it turned on
+        if (data == "!Sample")
+        {
+            Logger::notice("Sample Requested");
+            digitalWrite(LED_BUILTIN, HIGH);
+            float x{0.0}, y{0.0}, z{0.0};
+            gyro_.getXYZ(x, y, z);
+
+            // Write data to SD card if we have it turned on
 #if defined(LOG_TO_FILE) && defined(USE_SD_CARD)
-        writeDataToCsv(trajectoryFile_, gyroData_, true);
-        trajectoryFile_.flush();
+            writeDataToCsv(trajectoryFile_, gyroData_, true);
+            trajectoryFile_.flush();
 #endif
 
-        // Write data to the main serial port on the teensy for optionally using teensy without beagle bone
+            // Write data to the main serial port on the teensy for optionally using teensy without beagle bone
 #ifdef LOG_TO_SERIAL
-        // Serial.print(gyroData_.x);
-        // Serial.print(",  ");
-        // Serial.print(gyroData_.y);
-        // Serial.print(",  ");
-        // Serial.println(gyroData_.z);
-        float x{0.0}, y{0.0}, z{0.0};
-        gyro_.getXYZ(x, y, z);
-        Serial.print(x);
-        Serial.print(",  ");
-        Serial.print(y);
-        Serial.print(",  ");
-        Serial.println(z);
+
+            Serial.print(x);
+            Serial.print(",  ");
+            Serial.print(y);
+            Serial.print(",  ");
+            Serial.println(z);
 #endif
 
-        // Send data to the beagle bone
-        BB_UART.print(gyroData_.x);
-        BB_UART.print(",");
-        BB_UART.print(gyroData_.y);
-        BB_UART.print(",");
-        BB_UART.println(gyroData_.z);
+            // Send data to the beagle bone
+            BB_UART.print(x);
+            BB_UART.print(",");
+            BB_UART.print(y);
+            BB_UART.print(",");
+            BB_UART.println(z);
+            digitalWrite(LED_BUILTIN, LOW);
+        }
+        else
+        {
+            Logger::error(("Received a different meesage! " + data).c_str());
+        }
     }
 }
 
@@ -137,12 +137,6 @@ void loop()
 // Main Functions
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-
-void isrRoutine()
-{
-    if (isrTriggered) isrMissed = true;
-    isrTriggered = true;
-}
 
 //  --------------------------------------------------------------------------------------------------------------------
 void openFile(FsFile& file, const char* filename)

@@ -304,17 +304,16 @@ namespace ADXL357
 
     void Accelerometer::select()
     {
-        SPI1.beginTransaction(SPISettings(spiClockSpeed_, MSBFIRST, SPI_MODE2));
         digitalWrite(chipSelect_, LOW);
-        Serial.print("Setting chip select pin low ");
-        Serial.println(chipSelect_);
+        SPI1.beginTransaction(SPISettings(spiClockSpeed_, MSBFIRST, SPI_MODE0));
     }
 
     // -----------------------------------------------------------------------------------------------------------------
     void Accelerometer::deselect()
     {
-        digitalWrite(chipSelect_, HIGH);
         SPI1.endTransaction();
+        digitalWrite(chipSelect_, HIGH);
+        delay(1);
     }
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -339,23 +338,7 @@ namespace ADXL357
     {
         select();
         SPI1.transfer((reg << 1) | 0x1);
-        deselect();
-        select();
-        Serial.print("Reading register ");
-        Serial.print(reg);
-        Serial.print(",  ");
-        Serial.println((reg << 1) | 0x01, BIN);
         for (int ii = 0; ii < bytes; ii++) buffer[ii] = SPI1.transfer(0x00);
-        for (int ii = 0; ii < bytes; ii++)
-        {
-            Serial.print("[");
-            Serial.print(ii);
-            Serial.print("] ");
-            Serial.print(buffer[ii]);
-            Serial.print(",  ");
-        }
-        Serial.println("");
-        Serial.println("");
 
         deselect();
     }
