@@ -94,7 +94,7 @@ void loop()
         String data = BB_UART.readString();
         data.trim();
 
-        if (data == "!Sample")
+        if (data == "!")
         {
             Logger::notice("Sample Requested");
             digitalWrite(LED_BUILTIN, HIGH);
@@ -110,11 +110,11 @@ void loop()
             // Write data to the main serial port on the teensy for optionally using teensy without beagle bone
 #ifdef LOG_TO_SERIAL
 
-            Serial.print(x);
-            Serial.print(",  ");
-            Serial.print(y);
-            Serial.print(",  ");
-            Serial.println(z);
+            // Serial.print(x);
+            // Serial.print(",  ");
+            // Serial.print(y);
+            // Serial.print(",  ");
+            // Serial.println(z);
 #endif
 
             // Send data to the beagle bone
@@ -125,6 +125,8 @@ void loop()
             BB_UART.println(z);
             digitalWrite(LED_BUILTIN, LOW);
         }
+        else if (data == "#")
+            BB_UART.println("#");
         else
         {
             Logger::error(("Received a different meesage! " + data).c_str());
